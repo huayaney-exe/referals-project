@@ -68,10 +68,10 @@ export class CampaignWorker {
 
     for (const customerId of customerIds) {
       try {
-        // Get customer phone number
+        // Get customer data with stamps and business info
         const { data: customer, error } = await supabaseAdmin
           .from('customers')
-          .select('phone, name')
+          .select('phone, name, stamps_count, business:businesses(name, reward_structure)')
           .eq('id', customerId)
           .eq('business_id', businessId)
           .single();
@@ -82,8 +82,28 @@ export class CampaignWorker {
           continue;
         }
 
-        // Personalize message with customer name
-        const personalizedMessage = message.replace('{name}', customer.name);
+        // Get business reward info
+        const business = customer.business as any;
+        const stampsRequired = business?.reward_structure?.stamps_required || 10;
+        const rewardDescription = business?.reward_structure?.reward_description || 'premio';
+        const stampsCount = customer.stamps_count || 0;
+        const stampsMissing = Math.max(0, stampsRequired - stampsCount);
+
+        // Calculate days inactive (if last_activity_at was fetched)
+        const daysInactive = 0; // Would need last_activity_at to calculate
+
+        // Personalize message with ALL Spanish variables
+        const personalizedMessage = message
+          .replace(/{nombre}/g, customer.name)
+          .replace(/{name}/g, customer.name) // Support both Spanish and English
+          .replace(/{sellos}/g, stampsCount.toString())
+          .replace(/{stamps}/g, stampsCount.toString()) // Support both
+          .replace(/{sellos_faltantes}/g, stampsMissing.toString())
+          .replace(/{recompensa}/g, rewardDescription)
+          .replace(/{reward}/g, rewardDescription) // Support both
+          .replace(/{negocio}/g, business?.name || 'nuestro negocio')
+          .replace(/{business}/g, business?.name || 'nuestro negocio') // Support both
+          .replace(/{dias_inactivo}/g, daysInactive.toString());
 
         // Send WhatsApp message
         await this.whatsappService.sendMessage({
