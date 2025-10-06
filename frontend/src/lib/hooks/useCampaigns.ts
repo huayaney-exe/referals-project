@@ -44,7 +44,11 @@ export function useCreateCampaign() {
     }) => {
       const { data, error } = await supabase
         .from('campaigns')
-        .insert({ ...campaign, status: campaign.status || 'draft' })
+        .insert({
+          ...campaign,
+          status: campaign.status || 'draft',
+          message: campaign.message_template, // Also populate legacy message column
+        })
         .select()
         .single();
 
