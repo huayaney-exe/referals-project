@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { supabaseAdmin } from '../../config/supabase';
 import { ConflictError, ConcurrencyError } from '../types';
+import { campaignEventEmitter } from '../../infrastructure/events/EventEmitter';
 
 const customerSchema = z.object({
   business_id: z.string().uuid(),
@@ -48,6 +49,14 @@ export class CustomerService {
       .single();
 
     if (error) throw error;
+
+    // Emit customer enrolled event
+    campaignEventEmitter.emitCustomerEnrolled(
+      validated.business_id,
+      data.id,
+      { name: validated.name, phone: validated.phone }
+    );
+
     return data as Customer;
   }
 

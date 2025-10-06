@@ -9,21 +9,47 @@ export interface CampaignJob {
   message: string;
 }
 
+export interface SingleMessageJob {
+  campaignId: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  messageTemplate: string;
+  variables: {
+    nombre: string;
+    sellos: number;
+    recompensa: string;
+  };
+}
+
 export class CampaignWorker {
-  private queue: Queue.Queue<CampaignJob>;
+  private bulkQueue: Queue.Queue<CampaignJob>;
+  private singleQueue: Queue.Queue<SingleMessageJob>;
   private whatsappService: EvolutionWhatsAppService;
   private readonly RATE_LIMIT_DELAY = 2000; // 2 seconds between messages
 
   constructor(redisUrl: string = process.env.REDIS_URL || 'redis://localhost:6379') {
-    this.queue = new Queue<CampaignJob>('campaign-sends', redisUrl, {
+    this.bulkQueue = new Queue<CampaignJob>('campaign-sends', redisUrl, {
       defaultJobOptions: {
         attempts: 3,
         backoff: {
           type: 'exponential',
           delay: 5000,
         },
-        removeOnComplete: 100, // Keep last 100 completed jobs
-        removeOnFail: false, // Keep failed jobs for analysis
+        removeOnComplete: 100,
+        removeOnFail: false,
+      },
+    });
+
+    this.singleQueue = new Queue<SingleMessageJob>('single-messages', redisUrl, {
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
       },
     });
 
@@ -35,23 +61,33 @@ export class CampaignWorker {
    * Setup queue processor
    */
   private setupProcessor(): void {
-    this.queue.process(async (job: Job<CampaignJob>) => {
+    // Process bulk campaigns
+    this.bulkQueue.process(async (job: Job<CampaignJob>) => {
       return this.processCampaign(job);
     });
 
-    // Event handlers
-    this.queue.on('completed', async (job: Job<CampaignJob>) => {
+    // Process single messages
+    this.singleQueue.process(async (job: Job<SingleMessageJob>) => {
+      return this.processSingleMessage(job);
+    });
+
+    // Event handlers for bulk queue
+    this.bulkQueue.on('completed', async (job: Job<CampaignJob>) => {
       console.log(`Campaign ${job.data.campaignId} completed successfully`);
       await this.updateCampaignStatus(job.data.campaignId, 'completed');
     });
 
-    this.queue.on('failed', async (job: Job<CampaignJob>, err: Error) => {
+    this.bulkQueue.on('failed', async (job: Job<CampaignJob>, err: Error) => {
       console.error(`Campaign ${job.data.campaignId} failed:`, err.message);
 
-      // Move to dead letter queue after max retries
       if (job.attemptsMade >= (job.opts.attempts || 3)) {
         await this.updateCampaignStatus(job.data.campaignId, 'failed', err.message);
       }
+    });
+
+    // Event handlers for single message queue
+    this.singleQueue.on('failed', async (job: Job<SingleMessageJob>, err: Error) => {
+      console.error(`Single message for campaign ${job.data.campaignId} failed:`, err.message);
     });
   }
 
@@ -135,10 +171,45 @@ export class CampaignWorker {
   }
 
   /**
-   * Add a campaign to the queue
+   * Process a single message (for event-triggered campaigns)
+   */
+  private async processSingleMessage(job: Job<SingleMessageJob>): Promise<void> {
+    const { customerId, customerName, customerPhone, messageTemplate, variables } = job.data;
+
+    console.log(`Sending single message to customer ${customerId}`);
+
+    // Personalize message with variables
+    const personalizedMessage = messageTemplate
+      .replace(/{nombre}/g, variables.nombre)
+      .replace(/{name}/g, variables.nombre)
+      .replace(/{sellos}/g, variables.sellos.toString())
+      .replace(/{stamps}/g, variables.sellos.toString())
+      .replace(/{recompensa}/g, variables.recompensa)
+      .replace(/{reward}/g, variables.recompensa);
+
+    // Send WhatsApp message
+    await this.whatsappService.sendMessage({
+      instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+      phone: customerPhone,
+      text: personalizedMessage,
+    });
+
+    console.log(`Message sent to ${customerName} (${customerPhone})`);
+  }
+
+  /**
+   * Queue a single message (for event-triggered campaigns)
+   */
+  async queueCampaignMessage(messageJob: SingleMessageJob): Promise<string> {
+    const job = await this.singleQueue.add(messageJob);
+    return job.id as string;
+  }
+
+  /**
+   * Add a campaign to the queue (for bulk campaigns)
    */
   async queueCampaign(campaignJob: CampaignJob): Promise<string> {
-    const job = await this.queue.add(campaignJob, {
+    const job = await this.bulkQueue.add(campaignJob, {
       jobId: campaignJob.campaignId, // Idempotency
     });
 
@@ -213,19 +284,30 @@ export class CampaignWorker {
    */
   async getStats() {
     const [waiting, active, completed, failed, delayed] = await Promise.all([
-      this.queue.getWaitingCount(),
-      this.queue.getActiveCount(),
-      this.queue.getCompletedCount(),
-      this.queue.getFailedCount(),
-      this.queue.getDelayedCount(),
+      this.bulkQueue.getWaitingCount(),
+      this.bulkQueue.getActiveCount(),
+      this.bulkQueue.getCompletedCount(),
+      this.bulkQueue.getFailedCount(),
+      this.bulkQueue.getDelayedCount(),
+    ]);
+
+    const [singleWaiting, singleActive] = await Promise.all([
+      this.singleQueue.getWaitingCount(),
+      this.singleQueue.getActiveCount(),
     ]);
 
     return {
-      waiting,
-      active,
-      completed,
-      failed,
-      delayed,
+      bulk: {
+        waiting,
+        active,
+        completed,
+        failed,
+        delayed,
+      },
+      single: {
+        waiting: singleWaiting,
+        active: singleActive,
+      },
     };
   }
 
@@ -233,6 +315,7 @@ export class CampaignWorker {
    * Graceful shutdown
    */
   async close(): Promise<void> {
-    await this.queue.close();
+    await this.bulkQueue.close();
+    await this.singleQueue.close();
   }
 }

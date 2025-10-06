@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { supabaseAdmin } from '../../config/supabase';
 import { NotFoundError, BusinessLogicError } from '../types';
 
-const campaignSchema = z.object({
+// Manual campaign schema (legacy)
+const manualCampaignSchema = z.object({
   business_id: z.string().uuid(),
   name: z.string().min(3).max(255),
   message: z.string().min(1).max(1600),
@@ -13,8 +14,23 @@ const campaignSchema = z.object({
   scheduled_for: z.string().datetime().optional(),
 });
 
-export type CreateCampaignInput = z.infer<typeof campaignSchema>;
-export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'completed' | 'failed';
+// Event-triggered campaign schema (frontend)
+const eventCampaignSchema = z.object({
+  business_id: z.string().uuid(),
+  name: z.string().min(3).max(255),
+  message_template: z.string().min(1).max(1600),
+  trigger_type: z.enum(['customer_enrolled', 'stamps_reached', 'reward_unlocked', 'days_inactive']),
+  trigger_config: z.object({
+    type: z.string(),
+    value: z.number().optional(),
+  }),
+  status: z.enum(['draft', 'active', 'paused']).default('draft'),
+});
+
+export type CreateManualCampaignInput = z.infer<typeof manualCampaignSchema>;
+export type CreateEventCampaignInput = z.infer<typeof eventCampaignSchema>;
+export type CreateCampaignInput = CreateManualCampaignInput | CreateEventCampaignInput;
+export type CampaignStatus = 'draft' | 'active' | 'paused' | 'scheduled' | 'sending' | 'completed' | 'failed';
 
 export interface Campaign {
   id: string;
@@ -32,16 +48,34 @@ export interface Campaign {
 
 export class CampaignService {
   static async create(input: CreateCampaignInput): Promise<Campaign> {
-    const validated = campaignSchema.parse(input);
+    // Try event-triggered schema first
+    const eventResult = eventCampaignSchema.safeParse(input);
+    if (eventResult.success) {
+      const { data, error } = await supabaseAdmin
+        .from('campaigns')
+        .insert(eventResult.data)
+        .select()
+        .single();
 
-    const { data, error } = await supabaseAdmin
-      .from('campaigns')
-      .insert({ ...validated, status: 'draft' })
-      .select()
-      .single();
+      if (error) throw error;
+      return data as Campaign;
+    }
 
-    if (error) throw error;
-    return data as Campaign;
+    // Fall back to manual campaign schema
+    const manualResult = manualCampaignSchema.safeParse(input);
+    if (manualResult.success) {
+      const { data, error } = await supabaseAdmin
+        .from('campaigns')
+        .insert({ ...manualResult.data, status: 'draft' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Campaign;
+    }
+
+    // Neither schema matched
+    throw new BusinessLogicError('Invalid campaign format');
   }
 
   static async findById(id: string): Promise<Campaign | null> {

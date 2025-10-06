@@ -22,6 +22,8 @@ import scannerRoutes from './api/scanner/scanner.routes';
 import whatsappRoutes from './api/whatsapp/whatsapp.routes';
 import devRoutes from './api/dev/dev.routes';
 import { OutboxProcessor } from './infrastructure/outbox/OutboxProcessor';
+import { eventListener } from './infrastructure/events/EventListener';
+import { inactivityChecker } from './infrastructure/cron/InactivityChecker';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -152,6 +154,13 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`📊 Health check: http://localhost:${PORT}/health/live`);
     console.log(`🔍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
+    // Initialize event listener for campaign triggers
+    console.log('📡 Event listener initialized for campaign triggers');
+
+    // Start inactivity checker cron job
+    inactivityChecker.start();
+    console.log('⏰ Inactivity checker started');
+
     // Start outbox processor only if Redis is configured
     if (process.env.REDIS_URL) {
       try {
@@ -170,6 +179,7 @@ if (process.env.NODE_ENV !== 'test') {
   // Graceful shutdown
   process.on('SIGTERM', async () => {
     console.log('SIGTERM signal received: closing HTTP server');
+    inactivityChecker.stop();
     if (outboxProcessor) {
       await outboxProcessor.stop();
     }
@@ -178,6 +188,7 @@ if (process.env.NODE_ENV !== 'test') {
 
   process.on('SIGINT', async () => {
     console.log('SIGINT signal received: closing HTTP server');
+    inactivityChecker.stop();
     if (outboxProcessor) {
       await outboxProcessor.stop();
     }

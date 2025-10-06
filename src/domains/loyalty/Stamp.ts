@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../config/supabase';
 import { BusinessLogicError } from '../types';
+import { campaignEventEmitter } from '../../infrastructure/events/EventEmitter';
 
 export interface StampResult {
   new_stamps_count: number;
@@ -51,6 +52,32 @@ export class StampService {
     }
 
     const result = Array.isArray(data) ? data[0] : data;
+
+    // Emit stamps_reached event
+    campaignEventEmitter.emitStampsReached(
+      business_id,
+      customer_id,
+      result.new_stamps_count
+    );
+
+    // Emit reward_unlocked event if reward was earned
+    if (result.is_reward_earned) {
+      // Get business reward description
+      const { data: business } = await supabaseAdmin
+        .from('businesses')
+        .select('reward_structure')
+        .eq('id', business_id)
+        .single();
+
+      const rewardDescription = business?.reward_structure?.reward_description || 'premio';
+
+      campaignEventEmitter.emitRewardUnlocked(
+        business_id,
+        customer_id,
+        rewardDescription
+      );
+    }
+
     return result as StampResult;
   }
 
