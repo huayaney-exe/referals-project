@@ -17,7 +17,7 @@ import { useFirstCustomerCelebration } from '@/lib/hooks/useFirstCustomerCelebra
 import { FirstCustomerCelebration } from '@/components/FirstCustomerCelebration';
 import { useRewardRedemptions } from '@/lib/hooks/useRewardRedemptions';
 import { RewardRedemptionToast } from '@/components/RewardRedemptionToast';
-import { OnboardingChecklist } from '@/components/OnboardingChecklist';
+import { EnhancedOnboardingChecklist } from '@/components/EnhancedOnboardingChecklist';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -139,9 +139,9 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Onboarding Checklist */}
+      {/* Enhanced Onboarding Checklist */}
       <div className="mb-6">
-        <OnboardingChecklist businessId={businessId || ''} autoCollapse={true} />
+        <EnhancedOnboardingChecklist businessId={businessId || ''} autoCollapse={true} />
       </div>
 
       {/* Card Preview Section */}
