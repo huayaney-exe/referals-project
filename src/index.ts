@@ -152,9 +152,19 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`📊 Health check: http://localhost:${PORT}/health/live`);
     console.log(`🔍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
-    // Start outbox processor
-    outboxProcessor = new OutboxProcessor();
-    await outboxProcessor.start();
+    // Start outbox processor only if Redis is configured
+    if (process.env.REDIS_URL) {
+      try {
+        outboxProcessor = new OutboxProcessor();
+        await outboxProcessor.start();
+      } catch (error) {
+        console.warn('⚠️  Outbox processor failed to start:', error instanceof Error ? error.message : 'Unknown error');
+        console.warn('⚠️  Continuing without background job processing. Set REDIS_URL to enable.');
+      }
+    } else {
+      console.warn('⚠️  REDIS_URL not configured. Background job processing disabled.');
+      console.warn('⚠️  To enable: Create Redis instance and set REDIS_URL environment variable.');
+    }
   });
 
   // Graceful shutdown
