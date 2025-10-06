@@ -70,10 +70,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       {/* Promotional Banner */}
       <PromotionalBanner
-        message="🎉 ¡Lanzamiento! Plan Gratis Disponible"
-        subMessage="Por tiempo limitado · Regístrate hoy"
-        ctaText="Ver Planes"
-        onCtaClick={scrollToPricing}
+        message="🎉 Precios promocionales · Plan Gratis por tiempo limitado"
+        onClick={scrollToPricing}
         dismissible={true}
       />
 
@@ -81,7 +79,7 @@ export default function LandingPage() {
       <Navbar bannerVisible={bannerVisible} />
 
       {/* Spacer for fixed navbar and banner */}
-      <div className={bannerVisible ? 'h-28 md:h-24' : 'h-14 md:h-16'} />
+      <div className={bannerVisible ? 'h-[104px] md:h-[104px]' : 'h-14 md:h-16'} />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-purple-50 via-white to-orange-50 py-12 sm:py-16 md:py-20">

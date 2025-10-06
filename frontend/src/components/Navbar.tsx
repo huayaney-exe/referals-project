@@ -22,7 +22,7 @@ export function Navbar({ bannerVisible = false }: NavbarProps) {
 
   const isHidden = scrollDirection === 'down';
   const isFloating = scrollDirection === 'up';
-  const bannerHeight = bannerVisible ? 56 : 0;
+  const bannerHeight = bannerVisible ? 40 : 0;
 
   // Close mobile menu on route change
   useEffect(() => {
