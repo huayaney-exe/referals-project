@@ -38,6 +38,8 @@ export function useCreateCampaign() {
       business_id: string;
       name: string;
       message_template: string;
+      trigger_type?: string;
+      trigger_config?: any;
       status?: string;
     }) => {
       const { data, error } = await supabase

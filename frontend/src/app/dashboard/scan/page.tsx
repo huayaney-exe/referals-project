@@ -265,7 +265,7 @@ export default function ScanPage() {
                 <div className="flex items-center justify-center gap-4">
                   <Button
                     onClick={() => handleQuantityChange(-1)}
-                    variant="outline"
+                    variant="secondary"
                     disabled={quantity <= 1}
                     className="w-12 h-12"
                   >
@@ -278,7 +278,7 @@ export default function ScanPage() {
 
                   <Button
                     onClick={() => handleQuantityChange(1)}
-                    variant="outline"
+                    variant="secondary"
                     disabled={quantity >= 10}
                     className="w-12 h-12"
                   >
@@ -304,7 +304,7 @@ export default function ScanPage() {
 
               {/* Actions */}
               <div className="grid grid-cols-2 gap-3 pt-4">
-                <Button onClick={handleCancel} variant="outline" disabled={processing}>
+                <Button onClick={handleCancel} variant="ghost" disabled={processing}>
                   Cancelar
                 </Button>
                 <Button onClick={handleConfirm} disabled={processing}>

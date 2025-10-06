@@ -89,7 +89,7 @@ export default function SettingsPage() {
 
         if (response.ok) {
           const data = await response.json();
-          setWhatsAppStatus(data);
+          setWhatsappStatus(data);
         }
       } catch (error) {
         console.error('Error fetching WhatsApp status:', error);
@@ -142,7 +142,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setWhatsAppStatus(data);
+        setWhatsappStatus(data);
       } else {
         alert('Error al generar código QR de WhatsApp');
       }

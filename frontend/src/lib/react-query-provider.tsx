@@ -15,18 +15,6 @@ export function ReactQueryProvider({ children }: { children: React.ReactNode }) 
             retryDelay: 1000, // 1 second fixed delay instead of exponential backoff
           },
         },
-        logger: {
-          log: console.log,
-          warn: console.warn,
-          error: (error) => {
-            // Log Supabase errors for debugging
-            if (error instanceof Error) {
-              console.error('React Query Error:', error.message, error);
-            } else {
-              console.error('React Query Error:', error);
-            }
-          },
-        },
       })
   );
 

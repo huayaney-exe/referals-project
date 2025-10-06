@@ -150,7 +150,7 @@ export function RewardStep({ initialConfig, onNext, onBack }: RewardStepProps) {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <Button onClick={onBack} variant="outline">
+        <Button onClick={onBack} variant="secondary">
           ← Atrás
         </Button>
         <Button

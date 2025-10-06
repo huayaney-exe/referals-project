@@ -184,7 +184,7 @@ export default function LoyaltyCardPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Progreso</span>
               <Badge
-                variant={stampsUntilReward === 0 ? 'success' : 'default'}
+                variant={stampsUntilReward === 0 ? 'success' : 'neutral'}
                 className="bg-white/20 text-white"
               >
                 <Star className="w-3 h-3 mr-1" />

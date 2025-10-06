@@ -217,7 +217,7 @@ export default function ScannerAccessPage() {
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => copyAccessLink(token.id)}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                   >
                     {copiedId === token.id ? (
@@ -234,7 +234,7 @@ export default function ScannerAccessPage() {
                   </Button>
 
                   <Link href={`/dashboard/scanner-access/${token.id}`}>
-                    <Button variant="outline" size="sm">
+                    <Button variant="secondary" size="sm">
                       <BarChart3 className="w-4 h-4 mr-1" />
                       Estadísticas
                     </Button>
@@ -242,7 +242,7 @@ export default function ScannerAccessPage() {
 
                   <Button
                     onClick={() => toggleTokenStatus(token.id, token.is_active)}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                   >
                     <Power className="w-4 h-4" />
@@ -250,7 +250,7 @@ export default function ScannerAccessPage() {
 
                   <Button
                     onClick={() => deleteToken(token.id)}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />

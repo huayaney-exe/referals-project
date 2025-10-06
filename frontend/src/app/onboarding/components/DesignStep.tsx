@@ -195,7 +195,7 @@ export function DesignStep({
                 />
                 <Button
                   onClick={() => logoInputRef.current?.click()}
-                  variant="outline"
+                  variant="secondary"
                   className="w-full"
                   disabled={uploadImageMutation.isPending}
                 >
@@ -220,7 +220,7 @@ export function DesignStep({
                 />
                 <Button
                   onClick={() => backgroundInputRef.current?.click()}
-                  variant="outline"
+                  variant="secondary"
                   className="w-full"
                   disabled={uploadImageMutation.isPending}
                 >
@@ -299,7 +299,7 @@ export function DesignStep({
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <Button onClick={onBack} variant="outline">
+        <Button onClick={onBack} variant="secondary">
           ← Atrás
         </Button>
         <Button

@@ -106,7 +106,7 @@ export default function NewScannerAccessPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Link de Acceso</label>
               <div className="flex gap-2">
                 <Input value={accessUrl} readOnly className="flex-1" />
-                <Button onClick={copyLink} variant="outline">
+                <Button onClick={copyLink} variant="secondary">
                   {copied ? (
                     <>
                       <Check className="w-4 h-4 mr-2" />
@@ -124,7 +124,7 @@ export default function NewScannerAccessPage() {
 
             {/* Actions */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <Button onClick={downloadQR} variant="outline">
+              <Button onClick={downloadQR} variant="secondary">
                 <QrCode className="w-4 h-4 mr-2" />
                 Descargar QR
               </Button>
@@ -214,7 +214,7 @@ export default function NewScannerAccessPage() {
                 )}
               </Button>
               <Link href="/dashboard/scanner-access" className="flex-1">
-                <Button type="button" variant="outline" className="w-full">
+                <Button type="button" variant="secondary" className="w-full">
                   Cancelar
                 </Button>
               </Link>

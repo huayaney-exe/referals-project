@@ -249,12 +249,12 @@ export default function EnrollPage() {
 
               {/* Secondary actions */}
               <div className="grid grid-cols-2 gap-3">
-                <Button onClick={downloadQRCode} variant="outline" className="w-full">
+                <Button onClick={downloadQRCode} variant="secondary" className="w-full">
                   <Download className="w-4 h-4 mr-2" />
                   Descargar QR
                 </Button>
 
-                <Button onClick={copyCardUrl} variant="outline" className="w-full">
+                <Button onClick={copyCardUrl} variant="secondary" className="w-full">
                   {copied ? (
                     <>
                       <Check className="w-4 h-4 mr-2" />

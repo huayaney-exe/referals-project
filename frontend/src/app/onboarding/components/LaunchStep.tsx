@@ -93,7 +93,7 @@ export function LaunchStep({ businessId, businessName, qrDownloaded, onComplete,
             >
               📥 Descargar QR
             </Button>
-            <Button onClick={copyUrl} variant="outline">
+            <Button onClick={copyUrl} variant="secondary">
               🔗 Copiar URL
             </Button>
           </div>
@@ -166,7 +166,7 @@ export function LaunchStep({ businessId, businessName, qrDownloaded, onComplete,
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <Button onClick={onBack} variant="outline">
+        <Button onClick={onBack} variant="secondary">
           ← Atrás
         </Button>
         <Button

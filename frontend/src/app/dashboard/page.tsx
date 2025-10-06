@@ -34,8 +34,8 @@ export default function DashboardPage() {
   // Get recent customers (sorted by last activity)
   const recentCustomers = customers
     ?.sort((a, b) => {
-      const dateA = a.last_stamp_at ? new Date(a.last_stamp_at).getTime() : 0;
-      const dateB = b.last_stamp_at ? new Date(b.last_stamp_at).getTime() : 0;
+      const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0;
+      const dateB = b.last_activity_at ? new Date(b.last_activity_at).getTime() : 0;
       return dateB - dateA;
     })
     .slice(0, 5) || [];
@@ -106,12 +106,12 @@ export default function DashboardPage() {
                   <CustomerRow
                     key={customer.id}
                     name={customer.name}
-                    stamps={customer.stamps_count}
+                    stamps={customer.stamps_count || 0}
                     total={10}
                     status={
-                      customer.stamps_count >= 10
+                      (customer.stamps_count || 0) >= 10
                         ? 'Premio disponible'
-                        : customer.stamps_count >= 7
+                        : (customer.stamps_count || 0) >= 7
                         ? 'Cerca del premio'
                         : 'Activo'
                     }
