@@ -218,7 +218,7 @@ function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => vo
 
   return (
     <>
-      <div className="flex items-center gap-4 p-4 rounded-lg border border-warm-200 hover:border-brand-light hover:bg-brand-whisper/50 transition-all group">
+      <div className="flex items-center gap-4 p-4 rounded-lg border border-warm-200 hover:border-brand-light hover:bg-brand-whisper/50 transition-all">
         <div className="w-12 h-12 rounded-lg bg-brand-mist flex items-center justify-center text-brand">
           <MessageCircle className="w-6 h-6" />
         </div>
@@ -251,7 +251,7 @@ function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => vo
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-2">
             {/* Toggle On/Off */}
             <button
               onClick={handleToggle}
