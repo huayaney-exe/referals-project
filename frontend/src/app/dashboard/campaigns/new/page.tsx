@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/des
 import { Button } from '@/design-system/primitives/Button/Button';
 import { Input } from '@/design-system/primitives/Input/Input';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
-import { ArrowLeft, Send, Save, Sparkles, Target, Clock, TrendingUp, Plus } from 'lucide-react';
+import { ArrowLeft, Send, Save, Sparkles, Target, Clock, TrendingUp, Plus, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 // Template library
@@ -127,6 +127,7 @@ export default function EnhancedCampaignPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [trigger, setTrigger] = useState<{ type: string; value?: number } | null>(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSelectTemplate = (template: typeof TEMPLATES[0]) => {
     setSelectedTemplate(template.id);
@@ -160,6 +161,8 @@ export default function EnhancedCampaignPage() {
       return;
     }
 
+    setError('');
+
     try {
       await createCampaign.mutateAsync({
         business_id: user?.user_metadata?.business_id || '',
@@ -170,7 +173,13 @@ export default function EnhancedCampaignPage() {
         status,
       });
 
-      router.push('/dashboard/campaigns');
+      // Show success message
+      setSuccess(true);
+
+      // Redirect after short delay to show success message
+      setTimeout(() => {
+        router.push('/dashboard/campaigns?success=true');
+      }, 1500);
     } catch (err: any) {
       setError(err.message || 'Error al crear la campaña');
     }
@@ -358,6 +367,13 @@ export default function EnhancedCampaignPage() {
 
               {error && (
                 <div className="p-4 bg-error/10 border border-error/20 rounded-lg text-error text-sm">{error}</div>
+              )}
+
+              {success && (
+                <div className="p-4 bg-success/10 border border-success/20 rounded-lg text-success-dark text-sm flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>✅ Campaña creada exitosamente. Redirigiendo...</span>
+                </div>
               )}
             </CardContent>
           </Card>

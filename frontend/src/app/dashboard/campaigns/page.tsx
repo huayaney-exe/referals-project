@@ -1,19 +1,32 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
-import { MessageCircle, Plus, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { MessageCircle, Plus, Send, Clock, CheckCircle, XCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function CampaignsPage() {
   const { user } = useAuth();
-  const businessId = user?.id || '';
+  const businessId = user?.user_metadata?.business_id || '';
   const { data: campaigns, isLoading } = useCampaigns(businessId);
+  const searchParams = useSearchParams();
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get('success') === 'true') {
+      setShowSuccess(true);
+      // Auto-hide after 5 seconds
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const activeCampaigns = campaigns?.filter((c) => c.status === 'active') || [];
   const draftCampaigns = campaigns?.filter((c) => c.status === 'draft') || [];
@@ -31,6 +44,28 @@ export default function CampaignsPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      {/* Success Banner */}
+      {showSuccess && (
+        <div className="mb-6 p-4 bg-success/10 border-2 border-success/20 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center text-white">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-success-dark">¡Campaña creada exitosamente!</p>
+              <p className="text-sm text-warm-700">Tu campaña está lista y aparecerá en la lista abajo.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowSuccess(false)}
+            className="text-warm-500 hover:text-warm-700"
+            aria-label="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
