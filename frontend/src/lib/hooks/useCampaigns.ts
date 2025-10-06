@@ -44,8 +44,8 @@ export function useCreateCampaign() {
     }) => {
       const { data, error } = await supabase
         .from('campaigns')
-        .insert([{ ...campaign, status: campaign.status || 'draft' }])
-        .select('*')
+        .insert({ ...campaign, status: campaign.status || 'draft' })
+        .select()
         .single();
 
       if (error) throw error;
