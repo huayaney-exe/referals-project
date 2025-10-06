@@ -45,7 +45,7 @@ export function useCreateCampaign() {
       const { data, error } = await supabase
         .from('campaigns')
         .insert([{ ...campaign, status: campaign.status || 'draft' }])
-        .select()
+        .select('*')
         .single();
 
       if (error) throw error;
@@ -68,11 +68,11 @@ export function useUpdateCampaign() {
       id: string;
       updates: Partial<Campaign>;
     }) => {
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('campaigns')
         .update(updates)
         .eq('id', id)
-        .select()
+        .select('*')
         .single();
 
       if (error) throw error;

@@ -23,9 +23,15 @@ export default function QRCodePage() {
   useEffect(() => {
     async function trackVisit() {
       if (businessId) {
-        const { error } = await supabase.rpc('track_qr_page_view', { p_business_id: businessId });
-        if (error) {
-          console.error('Error tracking page view:', error);
+        try {
+          const { error } = await supabase.rpc('track_qr_page_view', { p_business_id: businessId });
+          if (error) {
+            // Non-critical analytics error - log but don't block page
+            console.warn('Page view tracking failed (non-critical):', error.message);
+          }
+        } catch (err) {
+          // Fail silently - page should still work even if tracking fails
+          console.warn('Page view tracking exception:', err);
         }
       }
     }
