@@ -1,19 +1,34 @@
 'use client';
 
+import { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
+import { Button } from '@/design-system/primitives/Button/Button';
 import { Progress } from '@/design-system/primitives/Progress/Progress';
-import { TrendingUp, Users, Gift, MessageCircle } from 'lucide-react';
+import { TrendingUp, Users, Gift, MessageCircle, X, CreditCard, QrCode as QrCodeIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useCustomerActivityMetrics, useStampTimeline, useCampaignPerformance } from '@/lib/hooks/useAnalytics';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 import { useCampaigns } from '@/lib/hooks/useCampaigns';
+import { useBusiness } from '@/lib/hooks/useBusiness';
+import { useFirstCustomerCelebration } from '@/lib/hooks/useFirstCustomerCelebration';
+import { FirstCustomerCelebration } from '@/components/FirstCustomerCelebration';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const businessId = user?.user_metadata?.business_id;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showOnboardingComplete = searchParams?.get('onboarding') === 'complete';
+  const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(false);
 
   // Fetch real data
+  const { data: business, isLoading: loadingBusiness } = useBusiness(businessId || '');
+
+  // First customer celebration
+  const { shouldCelebrate, dismissCelebration } = useFirstCustomerCelebration(businessId || '');
   const { data: activityMetrics, isLoading: loadingActivity } = useCustomerActivityMetrics(businessId || '');
   const { data: customers, isLoading: loadingCustomers } = useCustomers(businessId || '');
   const { data: campaigns, isLoading: loadingCampaigns } = useCampaigns(businessId || '');
@@ -40,7 +55,7 @@ export default function DashboardPage() {
     })
     .slice(0, 5) || [];
 
-  if (loadingActivity || loadingCustomers || loadingCampaigns) {
+  if (loadingActivity || loadingCustomers || loadingCampaigns || loadingBusiness) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="text-center py-12">
@@ -50,13 +65,132 @@ export default function DashboardPage() {
     );
   }
 
+  // Extract business info with defaults
+  const brandColors = business?.brand_colors || { primary: '#7C3AED', secondary: '#F97316', accent: '#FB923C' };
+  const rewardStructure = business?.reward_structure || { stamps_required: 10, reward_description: '1 producto gratis' };
+  const businessName = business?.name || 'Mi Negocio';
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      {/* First Customer Celebration Modal */}
+      {shouldCelebrate && <FirstCustomerCelebration onDismiss={dismissCelebration} />}
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-warm-900 mb-2">Dashboard</h1>
         <p className="text-warm-600">Resumen de tu programa de lealtad</p>
       </div>
+
+      {/* Welcome Banner (Post-Onboarding) */}
+      {showOnboardingComplete && !welcomeBannerDismissed && (
+        <Card className="mb-6 border-2 border-success bg-success/5">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl flex-shrink-0">🎉</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-success-dark mb-2">
+                  ¡Configuración Completa!
+                </h3>
+                <p className="text-warm-700 mb-4">
+                  Tu programa de fidelidad está listo. Aquí tienes tus próximos pasos:
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-success text-white flex items-center justify-center font-semibold text-xs">1</span>
+                    <span className="text-warm-800">Comparte tu QR con clientes (mira tu tarjeta abajo)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-warm-300 text-warm-800 flex items-center justify-center font-semibold text-xs">2</span>
+                    <span className="text-warm-600">Inscribe tu primer cliente escaneando su código</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-warm-300 text-warm-800 flex items-center justify-center font-semibold text-xs">3</span>
+                    <span className="text-warm-600">Opcional: Crea campañas automáticas más tarde</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setWelcomeBannerDismissed(true);
+                  router.push('/dashboard');
+                }}
+                className="text-warm-500 hover:text-warm-700 flex-shrink-0"
+                aria-label="Cerrar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Card Preview Section */}
+      <Card className="mb-8 border-2 border-brand-light">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            {/* Card Preview (mini version of customer card) */}
+            <div
+              className="w-full md:w-80 rounded-xl p-6 text-white shadow-lg flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})`
+              }}
+            >
+              {business?.logo_url && (
+                <img src={business.logo_url} alt={businessName} className="h-8 mb-3 object-contain" />
+              )}
+              <h3 className="font-bold text-xl mb-2">{businessName}</h3>
+              <div className="text-sm opacity-90 mb-4">Tarjeta de Fidelidad</div>
+              <div className="flex gap-1.5 mb-4 flex-wrap">
+                {Array.from({ length: rewardStructure.stamps_required }).map((_, i) => (
+                  <div key={i} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <span className="text-xs opacity-75">{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-xs opacity-75 mb-1">Premio al completar:</p>
+                <p className="text-sm font-semibold">{rewardStructure.reward_description}</p>
+              </div>
+            </div>
+
+            {/* QR Code & Actions */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-3 mb-4">
+                <CreditCard className="w-6 h-6 text-brand flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-lg font-semibold text-warm-900 mb-1">Tu Tarjeta Digital</h3>
+                  <p className="text-sm text-warm-600">
+                    Los clientes ven esta tarjeta cuando se inscriben con tu QR.
+                    Compártela en redes sociales o imprime tu QR para mostrar en tu local.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link href="/dashboard/qr">
+                  <Button variant="primary" size="sm" className="gap-2">
+                    <QrCodeIcon className="w-4 h-4" />
+                    Ver QR Completo
+                  </Button>
+                </Link>
+                <Link href="/dashboard/settings">
+                  <Button variant="secondary" size="sm">
+                    Editar Diseño
+                  </Button>
+                </Link>
+              </div>
+
+              {activityMetrics && activityMetrics.total_customers > 0 && (
+                <div className="mt-4 p-3 bg-brand-whisper rounded-lg">
+                  <p className="text-sm text-warm-700">
+                    <span className="font-semibold text-brand">{activityMetrics.total_customers}</span> {activityMetrics.total_customers === 1 ? 'cliente inscrito' : 'clientes inscritos'} con esta tarjeta
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

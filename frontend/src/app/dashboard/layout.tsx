@@ -13,6 +13,7 @@ import {
   QrCode,
   Scan,
   UserCog,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -60,6 +61,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 p-4 space-y-1">
           <NavLink href="/dashboard" icon={<BarChart3 className="w-5 h-5" />}>
             Dashboard
+          </NavLink>
+          <NavLink href="/dashboard/settings" icon={<CreditCard className="w-5 h-5" />}>
+            Mi Tarjeta
           </NavLink>
           <NavLink href="/dashboard/scan" icon={<Scan className="w-5 h-5" />}>
             Scanner
