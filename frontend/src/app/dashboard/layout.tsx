@@ -62,7 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <NavLink href="/dashboard" icon={<BarChart3 className="w-5 h-5" />}>
             Dashboard
           </NavLink>
-          <NavLink href="/dashboard/qr" icon={<CreditCard className="w-5 h-5" />}>
+          <NavLink href="/dashboard/card" icon={<CreditCard className="w-5 h-5" />}>
             Mi Tarjeta
           </NavLink>
           <NavLink href="/dashboard/scan" icon={<Scan className="w-5 h-5" />}>

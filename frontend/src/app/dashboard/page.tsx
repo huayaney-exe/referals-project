@@ -196,15 +196,10 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link href="/dashboard/qr">
+                <Link href="/dashboard/card">
                   <Button variant="primary" size="sm" className="gap-2">
-                    <QrCodeIcon className="w-4 h-4" />
-                    Ver QR Completo
-                  </Button>
-                </Link>
-                <Link href="/dashboard/settings">
-                  <Button variant="secondary" size="sm">
-                    Editar Diseño
+                    <CreditCard className="w-4 h-4" />
+                    Ver Mi Tarjeta
                   </Button>
                 </Link>
               </div>
