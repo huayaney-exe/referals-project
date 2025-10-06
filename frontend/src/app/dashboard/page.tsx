@@ -73,12 +73,17 @@ export default function DashboardPage() {
   }
 
   // Extract business info with defaults
-  const brandColors = business?.brand_colors || { primary: '#7C3AED', secondary: '#F97316', accent: '#FB923C' };
+  const brandColors = business?.brand_colors || { primary: '#A855F7', accent: '#F97316' };
+  // Use accent as secondary for gradient (database schema has primary/accent, not primary/secondary)
+  const gradientColors = {
+    primary: brandColors.primary || '#A855F7',
+    secondary: brandColors.accent || '#F97316'
+  };
   const rewardStructure = business?.reward_structure || { stamps_required: 10, reward_description: '1 producto gratis' };
   const businessName = business?.name || 'Mi Negocio';
 
   // Debug logging
-  console.log('Dashboard business data:', { business, brandColors, rewardStructure, businessName });
+  console.log('Dashboard business data:', { business, brandColors, gradientColors, rewardStructure, businessName });
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -155,7 +160,7 @@ export default function DashboardPage() {
             <div
               className="w-full md:w-80 min-h-[280px] rounded-xl p-6 text-white shadow-lg flex-shrink-0"
               style={{
-                background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})`,
+                background: `linear-gradient(135deg, ${gradientColors.primary}, ${gradientColors.secondary})`,
                 minHeight: '280px'
               }}
             >
