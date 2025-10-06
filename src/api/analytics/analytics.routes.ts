@@ -22,7 +22,7 @@ router.get('/dashboard', async (req: Request, res: Response, next: NextFunction)
       data: metrics,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -43,7 +43,7 @@ router.get('/top-customers', async (req: Request, res: Response, next: NextFunct
       count: topCustomers.length,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/stamps-timeline', async (req: Request, res: Response, next: NextFun
       count: timeline.length,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

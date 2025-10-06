@@ -60,7 +60,7 @@ router.post('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -98,7 +98,7 @@ router.get('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
 
     res.json({ data: maskedData });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -147,7 +147,7 @@ router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -176,7 +176,7 @@ router.patch('/:id', authenticate, async (req: AuthenticatedRequest, res, next) 
 
     res.json({ data });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -195,7 +195,7 @@ router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next)
 
     res.status(204).send();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -248,7 +248,7 @@ router.get('/:id/stats', authenticate, async (req: AuthenticatedRequest, res, ne
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

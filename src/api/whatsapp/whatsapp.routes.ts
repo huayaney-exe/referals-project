@@ -49,7 +49,7 @@ router.get('/status/:businessId', authenticate, async (req, res, next) => {
       });
     }
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -116,7 +116,7 @@ router.get('/qr/:businessId', authenticate, async (req, res, next) => {
       }
     }
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -156,7 +156,7 @@ router.post('/disconnect/:businessId', authenticate, async (req, res, next) => {
       });
     }
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

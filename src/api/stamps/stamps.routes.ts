@@ -67,7 +67,7 @@ router.post('/', authenticate, stampLimiter, async (req: AuthenticatedRequest, r
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -109,7 +109,7 @@ router.get('/history/:customerId', authenticate, async (req: AuthenticatedReques
       })),
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

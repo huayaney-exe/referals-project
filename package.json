@@ -28,7 +28,6 @@
   "license": "MIT",
   "devDependencies": {
     "@types/axios": "^0.9.36",
-    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.23",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.6",
@@ -51,6 +50,7 @@
     "@sentry/node": "^10.17.0",
     "@sentry/profiling-node": "^10.17.0",
     "@supabase/supabase-js": "^2.39.3",
+    "@types/cors": "^2.8.19",
     "@types/multer": "^2.0.0",
     "@types/qrcode": "^1.5.5",
     "axios": "^1.12.2",

@@ -86,7 +86,7 @@ router.get('/status', authenticate, async (req: AuthenticatedRequest, res, next)
       progress: progress || [],
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -127,7 +127,7 @@ router.patch('/step/:stepNumber', authenticate, async (req: AuthenticatedRequest
       step_name: stepName,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -165,7 +165,7 @@ router.patch('/complete', authenticate, async (req: AuthenticatedRequest, res, n
       message: 'Onboarding completed successfully',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

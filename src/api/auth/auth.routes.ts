@@ -120,7 +120,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
       whatsapp: whatsappInstance,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -155,7 +155,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

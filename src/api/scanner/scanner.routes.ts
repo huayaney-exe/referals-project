@@ -68,7 +68,7 @@ router.get('/validate/:token', validateLimiter, async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -173,7 +173,7 @@ router.post('/:token/stamp', stampLimiter, async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -276,7 +276,7 @@ router.post('/:token/redeem', stampLimiter, async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

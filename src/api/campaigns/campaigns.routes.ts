@@ -29,7 +29,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       data: campaign,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -51,7 +51,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       count: campaigns.length,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -84,7 +84,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction): Prom
       data: campaign,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -121,7 +121,7 @@ router.patch('/:id/activate', async (req: Request, res: Response, next: NextFunc
       message: 'Campaña activada exitosamente',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -156,7 +156,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction): P
       message: 'Campaña eliminada exitosamente',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

@@ -23,7 +23,7 @@ router.get('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
       total: customers.length,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -84,7 +84,7 @@ router.get('/:id', async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

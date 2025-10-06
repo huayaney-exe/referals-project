@@ -38,7 +38,7 @@ router.post('/', async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -65,7 +65,7 @@ router.get('/check', async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -121,7 +121,7 @@ router.get('/:customerId/qrcode', authenticate, async (req: AuthenticatedRequest
     res.setHeader('Content-Disposition', `inline; filename="loyalty-qr-${customerId}.${format}"`);
     res.send(qrBuffer);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
