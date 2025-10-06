@@ -19,7 +19,7 @@ router.get('/status/:businessId', authenticate, async (req, res, next) => {
     const { businessId } = req.params;
 
     // Verify user owns this business
-    if (req.user.businessId !== businessId) {
+    if (!req.user || req.user.businessId !== businessId) {
       return res.status(403).json({
         error: {
           code: 'FORBIDDEN',
@@ -62,7 +62,7 @@ router.get('/qr/:businessId', authenticate, async (req, res, next) => {
     const { businessId } = req.params;
 
     // Verify user owns this business
-    if (req.user.businessId !== businessId) {
+    if (!req.user || req.user.businessId !== businessId) {
       return res.status(403).json({
         error: {
           code: 'FORBIDDEN',
@@ -129,7 +129,7 @@ router.post('/disconnect/:businessId', authenticate, async (req, res, next) => {
     const { businessId } = req.params;
 
     // Verify user owns this business
-    if (req.user.businessId !== businessId) {
+    if (!req.user || req.user.businessId !== businessId) {
       return res.status(403).json({
         error: {
           code: 'FORBIDDEN',
