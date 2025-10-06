@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sin Conexión - Seya</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #faf5ff 0%, #fff7ed 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-center;
+      padding: 1rem;
+    }
+
+    .container {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, #9333ea 0%, #f97316 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-center;
+      color: white;
+      font-size: 2.5rem;
+    }
+
+    h1 {
+      color: #1f2937;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .button {
+      background: linear-gradient(135deg, #9333ea 0%, #f97316 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .tips {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    .tips h2 {
+      font-size: 1rem;
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+
+    .tips ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .tips li {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .tips li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #9333ea;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>Sin Conexión a Internet</h1>
+    <p>
+      No pudimos conectarnos al servidor. Por favor verifica tu conexión a internet e intenta nuevamente.
+    </p>
+    <button class="button" onclick="window.location.reload()">
+      Reintentar
+    </button>
+
+    <div class="tips">
+      <h2>Mientras tanto, puedes:</h2>
+      <ul>
+        <li>Verificar tu conexión WiFi o datos móviles</li>
+        <li>Revisar el modo avión de tu dispositivo</li>
+        <li>Intentar en unos momentos</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Auto-reload when connection is back
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

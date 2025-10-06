@@ -1,0 +1,351 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
+import { Button } from '@/design-system/primitives/Button/Button';
+import { Input } from '@/design-system/primitives/Input/Input';
+import { Building2, Settings as SettingsIcon, MessageCircle, Save, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
+
+interface BusinessSettings {
+  name: string;
+  email: string;
+  phone?: string;
+  category?: string;
+  logo_url?: string;
+  reward_structure: {
+    stamps_required: number;
+    reward_description: string;
+  };
+}
+
+interface WhatsAppStatus {
+  connected: boolean;
+  instance_name?: string;
+  qr_code?: string;
+}
+
+export default function SettingsPage() {
+  const { user } = useAuth();
+  const businessId = user?.user_metadata?.business_id;
+
+  // Business profile state
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
+    name: '',
+    email: '',
+    reward_structure: {
+      stamps_required: 10,
+      reward_description: 'Recompensa por 10 sellos',
+    },
+  });
+  const [saving, setSaving] = useState(false);
+  const [loadingBusiness, setLoadingBusiness] = useState(true);
+
+  // WhatsApp state
+  const [whatsappStatus, setWhatsappStatus] = useState<WhatsAppStatus | null>(null);
+  const [loadingWhatsApp, setLoadingWhatsApp] = useState(true);
+  const [refreshingQR, setRefreshingQR] = useState(false);
+
+  // Fetch business settings
+  useEffect(() => {
+    async function fetchBusinessSettings() {
+      if (!businessId) return;
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBusinessSettings(data);
+        }
+      } catch (error) {
+        console.error('Error fetching business settings:', error);
+      } finally {
+        setLoadingBusiness(false);
+      }
+    }
+
+    fetchBusinessSettings();
+  }, [businessId]);
+
+  // Fetch WhatsApp status
+  useEffect(() => {
+    async function fetchWhatsAppStatus() {
+      if (!businessId || !user) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          setLoadingWhatsApp(false);
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/whatsapp/status/${businessId}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setWhatsAppStatus(data);
+        }
+      } catch (error) {
+        console.error('Error fetching WhatsApp status:', error);
+      } finally {
+        setLoadingWhatsApp(false);
+      }
+    }
+
+    fetchWhatsAppStatus();
+  }, [businessId, user]);
+
+  const handleSaveBusinessSettings = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(businessSettings),
+      });
+
+      if (response.ok) {
+        alert('Configuración guardada exitosamente');
+      } else {
+        throw new Error('Error al guardar configuración');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Error al guardar configuración');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRefreshQR = async () => {
+    setRefreshingQR(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert('Sesión expirada. Por favor inicia sesión nuevamente.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/whatsapp/qr/${businessId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setWhatsAppStatus(data);
+      } else {
+        alert('Error al generar código QR de WhatsApp');
+      }
+    } catch (error) {
+      console.error('Error refreshing QR:', error);
+      alert('Error al conectar con el servidor');
+    } finally {
+      setRefreshingQR(false);
+    }
+  };
+
+  if (loadingBusiness) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-warm-600">Cargando configuración...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-warm-900 mb-2">Configuración</h1>
+        <p className="text-warm-600">Administra tu perfil de negocio y configuración de WhatsApp</p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Business Profile */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-brand" />
+              <CardTitle>Perfil del Negocio</CardTitle>
+            </div>
+            <CardDescription>Información básica de tu negocio</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nombre del Negocio"
+                value={businessSettings.name}
+                onChange={(e) => setBusinessSettings({ ...businessSettings, name: e.target.value })}
+                required
+              />
+              <Input
+                label="Correo Electrónico"
+                type="email"
+                value={businessSettings.email}
+                onChange={(e) => setBusinessSettings({ ...businessSettings, email: e.target.value })}
+                required
+              />
+              <Input
+                label="Teléfono"
+                placeholder="+51 912 345 678"
+                value={businessSettings.phone || ''}
+                onChange={(e) => setBusinessSettings({ ...businessSettings, phone: e.target.value })}
+              />
+              <Input
+                label="Categoría"
+                placeholder="Ej: Cafetería, Restaurante"
+                value={businessSettings.category || ''}
+                onChange={(e) => setBusinessSettings({ ...businessSettings, category: e.target.value })}
+              />
+            </div>
+
+            <div className="border-t pt-4 mt-6">
+              <h3 className="text-sm font-semibold text-warm-900 mb-3">Estructura de Recompensas</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Sellos Requeridos"
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={businessSettings.reward_structure.stamps_required}
+                  onChange={(e) =>
+                    setBusinessSettings({
+                      ...businessSettings,
+                      reward_structure: {
+                        ...businessSettings.reward_structure,
+                        stamps_required: parseInt(e.target.value) || 10,
+                      },
+                    })
+                  }
+                  required
+                />
+                <Input
+                  label="Descripción de la Recompensa"
+                  placeholder="Ej: 1 café gratis"
+                  value={businessSettings.reward_structure.reward_description}
+                  onChange={(e) =>
+                    setBusinessSettings({
+                      ...businessSettings,
+                      reward_structure: {
+                        ...businessSettings.reward_structure,
+                        reward_description: e.target.value,
+                      },
+                    })
+                  }
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button
+                variant="primary"
+                onClick={handleSaveBusinessSettings}
+                isLoading={saving}
+                leftIcon={<Save className="w-4 h-4" />}
+              >
+                Guardar Cambios
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* WhatsApp Setup */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-success" />
+              <CardTitle>Configuración de WhatsApp</CardTitle>
+            </div>
+            <CardDescription>Conecta tu cuenta de WhatsApp para enviar mensajes automáticos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingWhatsApp ? (
+              <div className="text-center py-8">
+                <p className="text-warm-600">Cargando estado de WhatsApp...</p>
+              </div>
+            ) : whatsappStatus?.connected ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-success/10 border-2 border-success/20 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center text-white">
+                      <MessageCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-success-dark">WhatsApp Conectado</p>
+                      <p className="text-sm text-warm-600">
+                        Instancia: {whatsappStatus.instance_name || 'Desconocida'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-warm-600">
+                  Tu cuenta de WhatsApp está conectada y lista para enviar mensajes automáticos a tus clientes.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="p-4 bg-warning/10 border-2 border-warning/20 rounded-lg">
+                  <p className="font-semibold text-warning-dark">WhatsApp No Conectado</p>
+                  <p className="text-sm text-warm-600 mt-1">
+                    Escanea el código QR con WhatsApp para conectar tu cuenta
+                  </p>
+                </div>
+
+                {whatsappStatus?.qr_code ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-4 bg-white rounded-lg border-2 border-warm-200">
+                      <Image
+                        src={whatsappStatus.qr_code}
+                        alt="WhatsApp QR Code"
+                        width={300}
+                        height={300}
+                        unoptimized
+                      />
+                    </div>
+                    <div className="space-y-2 text-sm text-warm-600">
+                      <p className="font-medium text-warm-900">Pasos para conectar:</p>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>Abre WhatsApp en tu teléfono</li>
+                        <li>Toca Menú o Configuración y selecciona Dispositivos vinculados</li>
+                        <li>Toca Vincular un dispositivo</li>
+                        <li>Apunta tu teléfono a esta pantalla para capturar el código QR</li>
+                      </ol>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      onClick={handleRefreshQR}
+                      isLoading={refreshingQR}
+                      leftIcon={<RefreshCw className="w-4 h-4" />}
+                    >
+                      Actualizar QR
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-warm-600 mb-4">No hay código QR disponible</p>
+                    <Button variant="primary" onClick={handleRefreshQR} isLoading={refreshingQR}>
+                      Generar Código QR
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
