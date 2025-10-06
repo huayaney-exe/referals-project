@@ -281,9 +281,17 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Campañas Activas</CardTitle>
-            <CardDescription>Tus campañas de mensajería</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Campañas Activas</CardTitle>
+              <CardDescription>Tus campañas de mensajería</CardDescription>
+            </div>
+            <Link
+              href="/dashboard/campaigns"
+              className="text-sm font-medium text-brand hover:text-brand-deep transition-colors"
+            >
+              Ver todas →
+            </Link>
           </CardHeader>
           <CardContent>
             {activeCampaigns === 0 ? (
