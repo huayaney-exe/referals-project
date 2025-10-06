@@ -77,6 +77,9 @@ export default function DashboardPage() {
   const rewardStructure = business?.reward_structure || { stamps_required: 10, reward_description: '1 producto gratis' };
   const businessName = business?.name || 'Mi Negocio';
 
+  // Debug logging
+  console.log('Dashboard business data:', { business, brandColors, rewardStructure, businessName });
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* First Customer Celebration Modal */}
@@ -150,9 +153,10 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row items-start gap-6">
             {/* Card Preview (mini version of customer card) */}
             <div
-              className="w-full md:w-80 rounded-xl p-6 text-white shadow-lg flex-shrink-0"
+              className="w-full md:w-80 min-h-[280px] rounded-xl p-6 text-white shadow-lg flex-shrink-0"
               style={{
-                background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})`
+                background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})`,
+                minHeight: '280px'
               }}
             >
               {business?.logo_url && (
