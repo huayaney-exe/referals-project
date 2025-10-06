@@ -15,6 +15,9 @@ import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import { useBusiness } from '@/lib/hooks/useBusiness';
 import { useFirstCustomerCelebration } from '@/lib/hooks/useFirstCustomerCelebration';
 import { FirstCustomerCelebration } from '@/components/FirstCustomerCelebration';
+import { useRewardRedemptions } from '@/lib/hooks/useRewardRedemptions';
+import { RewardRedemptionToast } from '@/components/RewardRedemptionToast';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -29,6 +32,10 @@ export default function DashboardPage() {
 
   // First customer celebration
   const { shouldCelebrate, dismissCelebration } = useFirstCustomerCelebration(businessId || '');
+
+  // Reward redemption celebrations
+  const { latestRedemption, dismissRedemption } = useRewardRedemptions(businessId || '');
+
   const { data: activityMetrics, isLoading: loadingActivity } = useCustomerActivityMetrics(businessId || '');
   const { data: customers, isLoading: loadingCustomers } = useCustomers(businessId || '');
   const { data: campaigns, isLoading: loadingCampaigns } = useCampaigns(businessId || '');
@@ -74,6 +81,14 @@ export default function DashboardPage() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* First Customer Celebration Modal */}
       {shouldCelebrate && <FirstCustomerCelebration onDismiss={dismissCelebration} />}
+
+      {/* Reward Redemption Toast */}
+      {latestRedemption && (
+        <RewardRedemptionToast
+          customerName={latestRedemption.customer.name}
+          onDismiss={dismissRedemption}
+        />
+      )}
 
       {/* Header */}
       <div className="mb-8">
@@ -123,6 +138,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Onboarding Checklist */}
+      <div className="mb-6">
+        <OnboardingChecklist businessId={businessId || ''} autoCollapse={true} />
+      </div>
 
       {/* Card Preview Section */}
       <Card className="mb-8 border-2 border-brand-light">
