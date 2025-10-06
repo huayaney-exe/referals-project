@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { useCampaigns } from '@/lib/hooks/useCampaigns';
+import { useCampaigns, useToggleCampaign, useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
@@ -11,12 +11,11 @@ import { MessageCircle, Plus, Send, Clock, CheckCircle, XCircle, X, Edit2, Trash
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { supabase } from '@/lib/supabase';
 
 export default function CampaignsPage() {
   const { user, loading: authLoading } = useAuth();
   const businessId = user?.user_metadata?.business_id || '';
-  const { data: campaigns, isLoading, refetch } = useCampaigns(businessId);
+  const { data: campaigns, isLoading } = useCampaigns(businessId);
   const searchParams = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -137,7 +136,7 @@ export default function CampaignsPage() {
           {campaigns && campaigns.length > 0 ? (
             <div className="space-y-4">
               {campaigns.map((campaign) => (
-                <CampaignRow key={campaign.id} campaign={campaign} onUpdate={refetch} />
+                <CampaignRow key={campaign.id} campaign={campaign} />
               ))}
             </div>
           ) : (
@@ -159,10 +158,10 @@ export default function CampaignsPage() {
   );
 }
 
-function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => void }) {
-  const [isToggling, setIsToggling] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+function CampaignRow({ campaign }: { campaign: any }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const toggleCampaign = useToggleCampaign();
+  const deleteCampaign = useDeleteCampaign();
 
   const statusConfig = {
     draft: { label: 'Borrador', variant: 'neutral' as const, icon: Clock },
@@ -179,40 +178,24 @@ function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => vo
       : 0;
 
   const handleToggle = async () => {
-    setIsToggling(true);
     try {
-      const newStatus = campaign.status === 'active' ? 'paused' : 'active';
-      const { error } = await supabase
-        .from('campaigns')
-        .update({ status: newStatus })
-        .eq('id', campaign.id);
-
-      if (error) throw error;
-      onUpdate();
+      await toggleCampaign.mutateAsync({
+        id: campaign.id,
+        currentStatus: campaign.status,
+      });
     } catch (error) {
       console.error('Error toggling campaign:', error);
       alert('Error al cambiar el estado de la campaña');
-    } finally {
-      setIsToggling(false);
     }
   };
 
   const handleDelete = async () => {
-    setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from('campaigns')
-        .delete()
-        .eq('id', campaign.id);
-
-      if (error) throw error;
-      onUpdate();
+      await deleteCampaign.mutateAsync(campaign.id);
       setShowDeleteConfirm(false);
     } catch (error) {
       console.error('Error deleting campaign:', error);
       alert('Error al eliminar la campaña');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -255,7 +238,7 @@ function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => vo
             {/* Toggle On/Off */}
             <button
               onClick={handleToggle}
-              disabled={isToggling}
+              disabled={toggleCampaign.isPending}
               className={`p-2 rounded-lg transition-colors ${
                 campaign.status === 'active'
                   ? 'bg-success/10 text-success hover:bg-success/20'
@@ -311,17 +294,17 @@ function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => vo
               <Button
                 variant="ghost"
                 onClick={() => setShowDeleteConfirm(false)}
-                disabled={isDeleting}
+                disabled={deleteCampaign.isPending}
               >
                 Cancelar
               </Button>
               <button
                 onClick={handleDelete}
-                disabled={isDeleting}
+                disabled={deleteCampaign.isPending}
                 className="px-4 py-2 bg-error text-white rounded-lg hover:bg-error-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
               >
-                {!isDeleting && <Trash2 className="w-4 h-4" />}
-                {isDeleting ? 'Eliminando...' : 'Eliminar Campaña'}
+                {!deleteCampaign.isPending && <Trash2 className="w-4 h-4" />}
+                {deleteCampaign.isPending ? 'Eliminando...' : 'Eliminar Campaña'}
               </button>
             </div>
           </div>

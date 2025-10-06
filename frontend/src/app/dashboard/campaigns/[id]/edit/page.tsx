@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useUpdateCampaign } from '@/lib/hooks/useCampaigns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
 import { Input } from '@/design-system/primitives/Input/Input';
@@ -16,9 +17,9 @@ export default function EditCampaignPage() {
   const params = useParams();
   const campaignId = params?.id as string;
   const { user } = useAuth();
+  const updateCampaign = useUpdateCampaign();
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [messageTemplate, setMessageTemplate] = useState('');
   const [status, setStatus] = useState<'active' | 'paused' | 'draft'>('draft');
@@ -67,19 +68,16 @@ export default function EditCampaignPage() {
     }
 
     setError('');
-    setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('campaigns')
-        .update({
+      await updateCampaign.mutateAsync({
+        id: campaignId,
+        updates: {
           name,
           message_template: messageTemplate,
           status,
-        })
-        .eq('id', campaignId);
-
-      if (error) throw error;
+        },
+      });
 
       setSuccess(true);
       setTimeout(() => {
@@ -87,7 +85,6 @@ export default function EditCampaignPage() {
       }, 1500);
     } catch (err: any) {
       setError(err.message || 'Error al guardar la campaña');
-      setSaving(false);
     }
   };
 
@@ -150,7 +147,7 @@ export default function EditCampaignPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej: Bienvenida a nuevos clientes"
-              disabled={saving}
+              disabled={updateCampaign.isPending}
             />
           </div>
 
@@ -163,21 +160,21 @@ export default function EditCampaignPage() {
               <Badge
                 variant={status === 'active' ? 'success' : 'neutral'}
                 className="cursor-pointer px-4 py-2"
-                onClick={() => !saving && setStatus('active')}
+                onClick={() => !updateCampaign.isPending && setStatus('active')}
               >
                 Activa
               </Badge>
               <Badge
                 variant={status === 'paused' ? 'warning' : 'neutral'}
                 className="cursor-pointer px-4 py-2"
-                onClick={() => !saving && setStatus('paused')}
+                onClick={() => !updateCampaign.isPending && setStatus('paused')}
               >
                 Pausada
               </Badge>
               <Badge
                 variant={status === 'draft' ? 'neutral' : 'neutral'}
                 className="cursor-pointer px-4 py-2"
-                onClick={() => !saving && setStatus('draft')}
+                onClick={() => !updateCampaign.isPending && setStatus('draft')}
               >
                 Borrador
               </Badge>
@@ -194,7 +191,7 @@ export default function EditCampaignPage() {
               onChange={(e) => setMessageTemplate(e.target.value)}
               className="w-full min-h-[120px] p-3 border border-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
               placeholder="Escribe tu mensaje aquí..."
-              disabled={saving}
+              disabled={updateCampaign.isPending}
             />
             <p className="text-sm text-warm-600 mt-1">
               {messageTemplate.length}/1600 caracteres
@@ -216,14 +213,14 @@ export default function EditCampaignPage() {
             <Button
               variant="primary"
               onClick={handleSave}
-              disabled={saving || !name || !messageTemplate}
+              disabled={updateCampaign.isPending || !name || !messageTemplate}
               leftIcon={<Save className="w-4 h-4" />}
               className="flex-1"
             >
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
+              {updateCampaign.isPending ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
             <Link href="/dashboard/campaigns" className="flex-1">
-              <Button variant="ghost" className="w-full" disabled={saving}>
+              <Button variant="ghost" className="w-full" disabled={updateCampaign.isPending}>
                 Cancelar
               </Button>
             </Link>
