@@ -13,11 +13,17 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function CampaignsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const businessId = user?.user_metadata?.business_id || '';
   const { data: campaigns, isLoading } = useCampaigns(businessId);
   const searchParams = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[CampaignsPage] Auth state:', { user: !!user, businessId, authLoading });
+    console.log('[CampaignsPage] Query state:', { campaigns: campaigns?.length, isLoading });
+  }, [user, businessId, authLoading, campaigns, isLoading]);
 
   useEffect(() => {
     if (searchParams?.get('success') === 'true') {
@@ -32,7 +38,7 @@ export default function CampaignsPage() {
   const draftCampaigns = campaigns?.filter((c) => c.status === 'draft') || [];
   const totalSent = campaigns?.reduce((sum, c) => sum + (c.sent_count || 0), 0) || 0;
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="flex items-center justify-center h-64">
