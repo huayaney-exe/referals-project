@@ -5,6 +5,7 @@ export interface Business {
   id: string;
   name: string;
   logo_url: string | null;
+  qr_code_url: string | null;
   brand_colors: {
     primary: string;
     secondary: string;
