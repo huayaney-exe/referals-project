@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Progress } from '@/components/ui/Progress';
+import { Button } from '@/design-system/primitives/Button/Button';
+import { Card } from '@/design-system/primitives/Card/Card';
+import { Badge } from '@/design-system/primitives/Badge/Badge';
+import { Progress } from '@/design-system/primitives/Progress/Progress';
 import { QRScanner } from '@/components/QRScanner';
 import {
   Star,
