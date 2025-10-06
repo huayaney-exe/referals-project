@@ -308,8 +308,8 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Define reglas</h3>
               <p className="text-gray-600 mb-4">
-                Crea automatizaciones: "Si cliente inactivo 14 días → enviar WhatsApp con
-                descuento"
+                Crea automatizaciones: &ldquo;Si cliente inactivo 14 días → enviar WhatsApp con
+                descuento&rdquo;
               </p>
               <div className="bg-gray-50 rounded-lg p-4">
                 <Zap className="w-12 h-12 text-purple-600 mx-auto" />
