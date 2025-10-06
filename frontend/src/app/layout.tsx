@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { ReactQueryProvider } from '@/lib/react-query-provider';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -43,6 +44,7 @@ export default function RootLayout({
             <ServiceWorkerRegistration />
           </AuthProvider>
         </ReactQueryProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
