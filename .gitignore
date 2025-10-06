@@ -41,5 +41,6 @@ claudedocs/
 # Uploads directory
 uploads/
 
-# Large assets
+# Large assets (excluding frontend public assets)
 *.svg
+!frontend/public/*.svg
