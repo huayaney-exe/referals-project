@@ -19,6 +19,19 @@ export default function QRCodePage() {
   // Generate enrollment URL
   const enrollmentUrl = `${window.location.origin}/enroll/${businessId}`;
 
+  // Track page visit for completion detection
+  useEffect(() => {
+    async function trackVisit() {
+      if (businessId) {
+        const { error } = await supabase.rpc('track_qr_page_view', { p_business_id: businessId });
+        if (error) {
+          console.error('Error tracking page view:', error);
+        }
+      }
+    }
+    trackVisit();
+  }, [businessId]);
+
   useEffect(() => {
     if (canvasRef.current && businessId) {
       // Generate QR code
@@ -33,11 +46,56 @@ export default function QRCodePage() {
             light: '#FFFFFF',
           },
         },
-        (error) => {
+        async (error) => {
           if (error) {
             console.error('QR generation error:', error);
           } else {
             setQrGenerated(true);
+
+            // Upload QR to Supabase Storage if not already uploaded
+            try {
+              const { data: business } = await supabase
+                .from('businesses')
+                .select('qr_code_url')
+                .eq('id', businessId)
+                .single();
+
+              if (!business?.qr_code_url && canvasRef.current) {
+                // Convert canvas to blob
+                canvasRef.current.toBlob(async (blob) => {
+                  if (!blob) return;
+
+                  const fileName = `qr-${businessId}.png`;
+                  const filePath = `qr-codes/${fileName}`;
+
+                  // Upload to storage
+                  const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('business-assets')
+                    .upload(filePath, blob, {
+                      contentType: 'image/png',
+                      upsert: true,
+                    });
+
+                  if (uploadError) {
+                    console.error('Error uploading QR:', uploadError);
+                    return;
+                  }
+
+                  // Get public URL
+                  const { data: { publicUrl } } = supabase.storage
+                    .from('business-assets')
+                    .getPublicUrl(filePath);
+
+                  // Update business with QR URL
+                  await supabase
+                    .from('businesses')
+                    .update({ qr_code_url: publicUrl })
+                    .eq('id', businessId);
+                }, 'image/png');
+              }
+            } catch (error) {
+              console.error('Error managing QR code:', error);
+            }
           }
         }
       );
@@ -76,14 +134,14 @@ export default function QRCodePage() {
     }
   }, [businessId, user]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!canvasRef.current || !qrGenerated) {
       alert('Espera a que el QR se genere completamente');
       return;
     }
 
     // Convert canvas to blob and download
-    canvasRef.current.toBlob((blob) => {
+    canvasRef.current.toBlob(async (blob) => {
       if (!blob) {
         alert('Error al generar la imagen');
         return;
@@ -97,6 +155,16 @@ export default function QRCodePage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Track download (triggers auto-completion via database trigger)
+      try {
+        await supabase
+          .from('businesses')
+          .update({ qr_downloaded: true })
+          .eq('id', businessId);
+      } catch (error) {
+        console.error('Error tracking download:', error);
+      }
     }, 'image/png');
   };
 

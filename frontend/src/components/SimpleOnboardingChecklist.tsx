@@ -29,9 +29,10 @@ import {
   ExternalLink,
   Loader2,
 } from 'lucide-react';
-import { useOnboardingChecklist, useChecklistProgress, useCompleteChecklistTask } from '@/lib/hooks/useOnboardingChecklist';
+import { useOnboardingChecklist, useChecklistProgress } from '@/lib/hooks/useOnboardingChecklist';
 import { useBusiness } from '@/lib/hooks/useBusiness';
 import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 
 const iconMap = {
   'credit-card': CreditCard,
@@ -50,10 +51,10 @@ export function SimpleOnboardingChecklist({
   autoCollapse = false,
 }: SimpleOnboardingChecklistProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: tasks, isLoading } = useOnboardingChecklist(businessId);
   const { data: progress } = useChecklistProgress(businessId);
   const { data: business } = useBusiness(businessId);
-  const completeTask = useCompleteChecklistTask();
 
   const [isExpanded, setIsExpanded] = useState(!autoCollapse);
   const [downloading, setDownloading] = useState(false);
@@ -77,7 +78,7 @@ export function SimpleOnboardingChecklist({
     ? `${window.location.origin}/enroll/${business.id}`
     : '';
 
-  // Handle QR download with completion tracking
+  // Handle QR download - database-driven completion only
   const handleDownloadQR = async () => {
     if (!business?.qr_code_url) return;
 
@@ -95,17 +96,17 @@ export function SimpleOnboardingChecklist({
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      // Mark QR as downloaded in database (triggers auto-completion)
+      // Track download in database (database trigger handles completion)
       await supabase
         .from('businesses')
         .update({ qr_downloaded: true })
         .eq('id', businessId);
 
-      // Also manually complete the task for immediate feedback
-      await completeTask.mutateAsync({
-        businessId,
-        taskId: 'share_enrollment_qr',
-      });
+      // Refetch checklist to show updated status
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['checklist', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['checklist-progress', businessId] });
+      }, 500);
     } catch (error) {
       console.error('Error downloading QR:', error);
     } finally {
@@ -113,23 +114,23 @@ export function SimpleOnboardingChecklist({
     }
   };
 
-  // Handle copy link with completion tracking
+  // Handle copy link - database-driven completion only
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(enrollmentUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
 
-      // Increment page visit count (triggers auto-completion at 2)
-      await supabase.rpc('increment_qr_page_visits', {
+      // Track copy action via RPC (database trigger handles completion after 2 visits)
+      await supabase.rpc('track_qr_page_view', {
         p_business_id: businessId,
       });
 
-      // Also manually complete the task
-      await completeTask.mutateAsync({
-        businessId,
-        taskId: 'share_enrollment_qr',
-      });
+      // Refetch checklist to show updated status
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['checklist', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['checklist-progress', businessId] });
+      }, 500);
     } catch (error) {
       console.error('Error copying link:', error);
     }
