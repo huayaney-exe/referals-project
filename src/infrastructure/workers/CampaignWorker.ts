@@ -1,6 +1,7 @@
 import Queue, { Job } from 'bull';
 import { EvolutionWhatsAppService } from '../whatsapp/EvolutionWhatsAppService';
 import { supabaseAdmin } from '../../config/supabase';
+import { EvolutionInstanceManager } from '../whatsapp/EvolutionInstanceManager';
 
 export interface CampaignJob {
   campaignId: string;
@@ -11,6 +12,7 @@ export interface CampaignJob {
 
 export interface SingleMessageJob {
   campaignId: string;
+  businessId: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
@@ -26,6 +28,7 @@ export class CampaignWorker {
   private bulkQueue: Queue.Queue<CampaignJob>;
   private singleQueue: Queue.Queue<SingleMessageJob>;
   private whatsappService: EvolutionWhatsAppService;
+  private instanceManager: EvolutionInstanceManager;
   private readonly RATE_LIMIT_DELAY = 2000; // 2 seconds between messages
 
   constructor(redisUrl: string = process.env.REDIS_URL || 'redis://localhost:6379') {
@@ -54,6 +57,7 @@ export class CampaignWorker {
     });
 
     this.whatsappService = new EvolutionWhatsAppService();
+    this.instanceManager = new EvolutionInstanceManager();
     this.setupProcessor();
   }
 
@@ -99,6 +103,9 @@ export class CampaignWorker {
 
     console.log(`Processing campaign ${campaignId} for ${customerIds.length} customers`);
 
+    // Generate instance name from business ID
+    const instanceName = this.instanceManager.generateInstanceName(businessId);
+
     let sentCount = 0;
     let failedCount = 0;
 
@@ -141,9 +148,9 @@ export class CampaignWorker {
           .replace(/{business}/g, business?.name || 'nuestro negocio') // Support both
           .replace(/{dias_inactivo}/g, daysInactive.toString());
 
-        // Send WhatsApp message
+        // Send WhatsApp message using business's instance
         await this.whatsappService.sendMessage({
-          instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+          instanceName,
           phone: customer.phone,
           text: personalizedMessage,
         });
@@ -174,9 +181,12 @@ export class CampaignWorker {
    * Process a single message (for event-triggered campaigns)
    */
   private async processSingleMessage(job: Job<SingleMessageJob>): Promise<void> {
-    const { customerId, customerName, customerPhone, messageTemplate, variables } = job.data;
+    const { businessId, customerId, customerName, customerPhone, messageTemplate, variables } = job.data;
 
-    console.log(`Sending single message to customer ${customerId}`);
+    console.log(`Sending single message to customer ${customerId} for business ${businessId}`);
+
+    // Generate instance name from business ID
+    const instanceName = this.instanceManager.generateInstanceName(businessId);
 
     // Personalize message with variables
     const personalizedMessage = messageTemplate
@@ -187,14 +197,14 @@ export class CampaignWorker {
       .replace(/{recompensa}/g, variables.recompensa)
       .replace(/{reward}/g, variables.recompensa);
 
-    // Send WhatsApp message
+    // Send WhatsApp message using business's instance
     await this.whatsappService.sendMessage({
-      instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+      instanceName,
       phone: customerPhone,
       text: personalizedMessage,
     });
 
-    console.log(`Message sent to ${customerName} (${customerPhone})`);
+    console.log(`Message sent to ${customerName} (${customerPhone}) via instance ${instanceName}`);
   }
 
   /**

@@ -1,6 +1,7 @@
 import Queue from 'bull';
 import { supabaseAdmin } from '../../config/supabase';
 import { EvolutionWhatsAppService } from '../whatsapp/EvolutionWhatsAppService';
+import { EvolutionInstanceManager } from '../whatsapp/EvolutionInstanceManager';
 // PassKit deprecated in favor of QR code implementation
 // import { PassKitService } from '../passkit/PassKitService';
 
@@ -17,6 +18,7 @@ interface OutboxEvent {
 export class OutboxProcessor {
   private queue: Queue.Queue;
   private whatsappService: EvolutionWhatsAppService;
+  private instanceManager: EvolutionInstanceManager;
   // PassKit deprecated - using QR codes instead
   // private passkitService: PassKitService;
   private isProcessing: boolean = false;
@@ -45,6 +47,7 @@ export class OutboxProcessor {
     });
 
     this.whatsappService = new EvolutionWhatsAppService();
+    this.instanceManager = new EvolutionInstanceManager();
     // PassKit deprecated - using QR codes for loyalty cards
     // this.passkitService = new PassKitService();
 
@@ -186,14 +189,17 @@ export class OutboxProcessor {
    * Process WhatsApp message event
    */
   private async processWhatsAppMessage(event: OutboxEvent): Promise<void> {
-    const { phone, message } = event.payload;
+    const { phone, message, businessId } = event.payload;
 
-    if (!phone || !message) {
-      throw new Error('Invalid WhatsApp message payload');
+    if (!phone || !message || !businessId) {
+      throw new Error('Invalid WhatsApp message payload - missing phone, message, or businessId');
     }
 
+    // Generate instance name from business ID
+    const instanceName = this.instanceManager.generateInstanceName(businessId as string);
+
     await this.whatsappService.sendMessage({
-      instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+      instanceName,
       phone: phone as string,
       text: message as string,
     });

@@ -1,6 +1,7 @@
 import Queue, { Job } from 'bull';
 import { supabaseAdmin } from '../../config/supabase';
 import { EvolutionWhatsAppService } from '../whatsapp/EvolutionWhatsAppService';
+import { EvolutionInstanceManager } from '../whatsapp/EvolutionInstanceManager';
 
 export interface ReengagementJob {
   businessId: string;
@@ -19,6 +20,7 @@ interface InactiveCustomer {
 export class ReengagementWorker {
   private queue: Queue.Queue<ReengagementJob>;
   private whatsappService: EvolutionWhatsAppService;
+  private instanceManager: EvolutionInstanceManager;
   private readonly RATE_LIMIT_DELAY = 2000; // 2 seconds between messages
   private readonly DEFAULT_INACTIVE_DAYS = 30;
 
@@ -36,6 +38,7 @@ export class ReengagementWorker {
     });
 
     this.whatsappService = new EvolutionWhatsAppService();
+    this.instanceManager = new EvolutionInstanceManager();
     this.setupProcessor();
     this.setupScheduledJobs();
   }
@@ -118,6 +121,9 @@ export class ReengagementWorker {
     let sentCount = 0;
     let failedCount = 0;
 
+    // Generate instance name from business ID
+    const instanceName = this.instanceManager.generateInstanceName(businessId);
+
     for (const customer of inactiveCustomers as InactiveCustomer[]) {
       try {
         // Personalize message
@@ -125,9 +131,9 @@ export class ReengagementWorker {
           .replace('{name}', customer.name)
           .replace('{stamps}', customer.stamps_count.toString());
 
-        // Send WhatsApp message
+        // Send WhatsApp message using business's instance
         await this.whatsappService.sendMessage({
-          instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'default',
+          instanceName,
           phone: customer.phone,
           text: personalizedMessage,
         });

@@ -40,6 +40,7 @@ export class TriggerEvaluator {
     for (const campaign of campaigns) {
       await this.campaignWorker.queueCampaignMessage({
         campaignId: campaign.id,
+        businessId: campaign.business_id,
         customerId: customer.id,
         customerName: customer.name,
         customerPhone: customer.phone,
@@ -87,6 +88,7 @@ export class TriggerEvaluator {
     for (const campaign of matchingCampaigns) {
       await this.campaignWorker.queueCampaignMessage({
         campaignId: campaign.id,
+        businessId: campaign.business_id,
         customerId: customer.id,
         customerName: customer.name,
         customerPhone: customer.phone,
@@ -127,6 +129,7 @@ export class TriggerEvaluator {
     for (const campaign of campaigns) {
       await this.campaignWorker.queueCampaignMessage({
         campaignId: campaign.id,
+        businessId: campaign.business_id,
         customerId: customer.id,
         customerName: customer.name,
         customerPhone: customer.phone,
@@ -174,6 +177,7 @@ export class TriggerEvaluator {
     for (const campaign of matchingCampaigns) {
       await this.campaignWorker.queueCampaignMessage({
         campaignId: campaign.id,
+        businessId: campaign.business_id,
         customerId: customer.id,
         customerName: customer.name,
         customerPhone: customer.phone,
