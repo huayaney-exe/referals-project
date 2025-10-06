@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       analytics_events: {
@@ -151,6 +176,54 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_milestones: {
+        Row: {
+          achieved_at: string
+          business_id: string
+          id: string
+          metadata: Json | null
+          metric_value: number
+          milestone_id: string
+          notified: boolean | null
+          notified_at: string | null
+        }
+        Insert: {
+          achieved_at?: string
+          business_id: string
+          id?: string
+          metadata?: Json | null
+          metric_value: number
+          milestone_id: string
+          notified?: boolean | null
+          notified_at?: string | null
+        }
+        Update: {
+          achieved_at?: string
+          business_id?: string
+          id?: string
+          metadata?: Json | null
+          metric_value?: number
+          milestone_id?: string
+          notified?: boolean | null
+          notified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_milestones_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_milestones_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestone_definitions"
             referencedColumns: ["id"]
           },
         ]
@@ -337,6 +410,84 @@ export type Database = {
           },
         ]
       }
+      checklist_progress: {
+        Row: {
+          business_id: string
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          task_id: string
+        }
+        Insert: {
+          business_id: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          task_id: string
+        }
+        Update: {
+          business_id?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_progress_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_progress_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_tasks: {
+        Row: {
+          action_hint: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          order_index: number
+          required: boolean | null
+          title: string
+        }
+        Insert: {
+          action_hint?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id: string
+          order_index: number
+          required?: boolean | null
+          title: string
+        }
+        Update: {
+          action_hint?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          order_index?: number
+          required?: boolean | null
+          title?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           business_id: string
@@ -392,6 +543,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      milestone_definitions: {
+        Row: {
+          badge_color: string
+          celebration_message: string
+          celebration_submessage: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          metric_type: string
+          order_index: number
+          threshold: number
+          tier: number
+          title: string
+        }
+        Insert: {
+          badge_color: string
+          celebration_message: string
+          celebration_submessage?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id: string
+          metric_type: string
+          order_index: number
+          threshold: number
+          tier: number
+          title: string
+        }
+        Update: {
+          badge_color?: string
+          celebration_message?: string
+          celebration_submessage?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          metric_type?: string
+          order_index?: number
+          threshold?: number
+          tier?: number
+          title?: string
+        }
+        Relationships: []
       }
       onboarding_progress: {
         Row: {
@@ -581,6 +777,61 @@ export type Database = {
           },
         ]
       }
+      reward_redemptions: {
+        Row: {
+          business_id: string
+          customer_id: string
+          id: string
+          metadata: Json | null
+          notified: boolean | null
+          notified_at: string | null
+          redeemed_at: string
+          stamp_id: string
+        }
+        Insert: {
+          business_id: string
+          customer_id: string
+          id?: string
+          metadata?: Json | null
+          notified?: boolean | null
+          notified_at?: string | null
+          redeemed_at?: string
+          stamp_id: string
+        }
+        Update: {
+          business_id?: string
+          customer_id?: string
+          id?: string
+          metadata?: Json | null
+          notified?: boolean | null
+          notified_at?: string | null
+          redeemed_at?: string
+          stamp_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_redemptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_stamp_id_fkey"
+            columns: ["stamp_id"]
+            isOneToOne: true
+            referencedRelation: "stamps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scanner_sessions: {
         Row: {
           created_at: string | null
@@ -749,6 +1000,23 @@ export type Database = {
           stamp_id: string
         }[]
       }
+      check_milestones: {
+        Args: { p_business_id: string }
+        Returns: {
+          achieved_at: string
+          business_id: string
+          id: string
+          metadata: Json | null
+          metric_value: number
+          milestone_id: string
+          notified: boolean | null
+          notified_at: string | null
+        }[]
+      }
+      complete_checklist_task: {
+        Args: { p_business_id: string; p_task_id: string }
+        Returns: undefined
+      }
       complete_onboarding: {
         Args: { p_business_id: string }
         Returns: undefined
@@ -757,13 +1025,49 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_checklist_progress: {
+        Args: { p_business_id: string }
+        Returns: {
+          completed_required_tasks: number
+          completed_tasks: number
+          is_complete: boolean
+          progress_percent: number
+          required_tasks: number
+          total_tasks: number
+        }[]
+      }
       get_customer_business: {
         Args: { customer_id_param: string }
         Returns: string
       }
+      get_milestone_summary: {
+        Args: { p_business_id: string }
+        Returns: {
+          achieved_milestones: number
+          bronze_count: number
+          gold_count: number
+          latest_achieved_at: string
+          latest_milestone: string
+          platinum_count: number
+          silver_count: number
+          total_milestones: number
+        }[]
+      }
       is_business_owner: {
         Args: { business_id_param: string }
         Returns: boolean
+      }
+      is_checklist_complete: {
+        Args: { p_business_id: string }
+        Returns: boolean
+      }
+      mark_milestone_notified: {
+        Args: { p_milestone_id: string }
+        Returns: undefined
+      }
+      mark_redemption_notified: {
+        Args: { p_redemption_id: string }
+        Returns: undefined
       }
       track_onboarding_step: {
         Args: {
@@ -913,6 +1217,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

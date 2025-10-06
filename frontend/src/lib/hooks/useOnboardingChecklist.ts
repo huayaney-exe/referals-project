@@ -50,7 +50,7 @@ export function useOnboardingChecklist(businessId: string) {
     queryFn: async () => {
       // Fetch all task definitions
       const tasks = await queryWithErrorHandling(
-        () => supabase
+        async () => await supabase
           .from('checklist_tasks')
           .select('*')
           .order('order_index'),
@@ -59,7 +59,7 @@ export function useOnboardingChecklist(businessId: string) {
 
       // Fetch progress for this business
       const progress = await queryWithErrorHandling(
-        () => supabase
+        async () => await supabase
           .from('checklist_progress')
           .select('task_id, completed, completed_at')
           .eq('business_id', businessId),

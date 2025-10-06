@@ -193,14 +193,14 @@ export function createRealtimeChannel(
   const channel = supabase
     .channel(channelName)
     .on(
-      'postgres_changes',
+      'postgres_changes' as any,
       {
         event: config.event || '*',
         schema: 'public',
-        table: config.table,
+        table: config.table as string,
         filter: config.filter,
-      },
-      (payload) => {
+      } as any,
+      (payload: any) => {
         try {
           config.callback(payload);
         } catch (error) {
@@ -211,10 +211,8 @@ export function createRealtimeChannel(
         }
       }
     )
-    .on('system', {}, (status) => {
+    .subscribe((status: string, err?: Error) => {
       console.log(`[Realtime] ${channelName} status:`, status);
-    })
-    .subscribe((status, err) => {
       if (err) {
         console.error(`[Realtime Subscription Error] ${channelName}:`, err);
         if (config.onError) {
