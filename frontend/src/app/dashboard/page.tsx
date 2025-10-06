@@ -286,30 +286,42 @@ export default function DashboardPage() {
               <CardTitle>Campañas Activas</CardTitle>
               <CardDescription>Tus campañas de mensajería</CardDescription>
             </div>
-            <Link
-              href="/dashboard/campaigns"
-              className="text-sm font-medium text-brand hover:text-brand-deep transition-colors"
-            >
-              Ver todas →
-            </Link>
+            {activeCampaigns > 3 && (
+              <Link
+                href="/dashboard/campaigns"
+                className="text-sm font-medium text-brand hover:text-brand-deep transition-colors"
+              >
+                Ver todas ({activeCampaigns}) →
+              </Link>
+            )}
           </CardHeader>
           <CardContent>
             {activeCampaigns === 0 ? (
               <p className="text-sm text-warm-600 py-4">No hay campañas activas</p>
             ) : (
-              <div className="space-y-4">
-                {campaigns
-                  ?.filter(c => c.status === 'active')
-                  .slice(0, 3)
-                  .map((campaign) => (
-                    <RuleRow
-                      key={campaign.id}
-                      title={campaign.name}
-                      action={`${campaign.sent_count || 0} mensajes enviados`}
-                      active={campaign.status === 'active'}
-                    />
-                  ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {campaigns
+                    ?.filter(c => c.status === 'active')
+                    .slice(0, 3)
+                    .map((campaign) => (
+                      <RuleRow
+                        key={campaign.id}
+                        title={campaign.name}
+                        action={`${campaign.sent_count || 0} mensajes enviados`}
+                        active={campaign.status === 'active'}
+                      />
+                    ))}
+                </div>
+                {activeCampaigns <= 3 && (
+                  <Link
+                    href="/dashboard/campaigns"
+                    className="mt-4 inline-flex items-center text-sm font-medium text-brand hover:text-brand-deep transition-colors"
+                  >
+                    Gestionar campañas →
+                  </Link>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

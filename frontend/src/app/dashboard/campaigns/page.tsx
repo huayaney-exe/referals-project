@@ -7,15 +7,16 @@ import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
-import { MessageCircle, Plus, Send, Clock, CheckCircle, XCircle, X } from 'lucide-react';
+import { MessageCircle, Plus, Send, Clock, CheckCircle, XCircle, X, Edit2, Trash2, Power, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase';
 
 export default function CampaignsPage() {
   const { user, loading: authLoading } = useAuth();
   const businessId = user?.user_metadata?.business_id || '';
-  const { data: campaigns, isLoading } = useCampaigns(businessId);
+  const { data: campaigns, isLoading, refetch } = useCampaigns(businessId);
   const searchParams = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -136,7 +137,7 @@ export default function CampaignsPage() {
           {campaigns && campaigns.length > 0 ? (
             <div className="space-y-4">
               {campaigns.map((campaign) => (
-                <CampaignRow key={campaign.id} campaign={campaign} />
+                <CampaignRow key={campaign.id} campaign={campaign} onUpdate={refetch} />
               ))}
             </div>
           ) : (
@@ -158,7 +159,11 @@ export default function CampaignsPage() {
   );
 }
 
-function CampaignRow({ campaign }: { campaign: any }) {
+function CampaignRow({ campaign, onUpdate }: { campaign: any; onUpdate: () => void }) {
+  const [isToggling, setIsToggling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const statusConfig = {
     draft: { label: 'Borrador', variant: 'neutral' as const, icon: Clock },
     active: { label: 'Activa', variant: 'success' as const, icon: CheckCircle },
@@ -173,41 +178,155 @@ function CampaignRow({ campaign }: { campaign: any }) {
       ? Math.round((campaign.sent_count / (campaign.sent_count + (campaign.failed_count || 0))) * 100)
       : 0;
 
+  const handleToggle = async () => {
+    setIsToggling(true);
+    try {
+      const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+      const { error } = await supabase
+        .from('campaigns')
+        .update({ status: newStatus })
+        .eq('id', campaign.id);
+
+      if (error) throw error;
+      onUpdate();
+    } catch (error) {
+      console.error('Error toggling campaign:', error);
+      alert('Error al cambiar el estado de la campaña');
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('id', campaign.id);
+
+      if (error) throw error;
+      onUpdate();
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      alert('Error al eliminar la campaña');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-4 p-4 rounded-lg border border-warm-200 hover:border-brand-light hover:bg-brand-whisper/50 transition-all">
-      <div className="w-12 h-12 rounded-lg bg-brand-mist flex items-center justify-center text-brand">
-        <MessageCircle className="w-6 h-6" />
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-medium text-warm-900">{campaign.name}</h4>
-          <Badge variant={config.variant}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {config.label}
-          </Badge>
+    <>
+      <div className="flex items-center gap-4 p-4 rounded-lg border border-warm-200 hover:border-brand-light hover:bg-brand-whisper/50 transition-all group">
+        <div className="w-12 h-12 rounded-lg bg-brand-mist flex items-center justify-center text-brand">
+          <MessageCircle className="w-6 h-6" />
         </div>
-        <p className="text-sm text-warm-600 line-clamp-1">{campaign.message_template}</p>
-      </div>
 
-      <div className="text-right">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-medium text-warm-900">{campaign.name}</h4>
+            <Badge variant={config.variant}>
+              <StatusIcon className="w-3 h-3 mr-1" />
+              {config.label}
+            </Badge>
+          </div>
+          <p className="text-sm text-warm-600 line-clamp-1">{campaign.message_template}</p>
+        </div>
+
         <div className="flex items-center gap-4">
           {campaign.sent_count > 0 && (
-            <div>
+            <div className="text-right">
               <p className="text-sm font-medium text-warm-900">
                 {campaign.sent_count} enviados
               </p>
-              <p className="text-xs text-success">{successRate}% éxito</p>
+              <p className="text-xs text-success">→ {successRate}% éxito</p>
             </div>
           )}
-          <div>
+          <div className="text-right">
             <p className="text-xs text-warm-500">
               {campaign.created_at &&
                 format(new Date(campaign.created_at), "d 'de' MMM", { locale: es })}
             </p>
           </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Toggle On/Off */}
+            <button
+              onClick={handleToggle}
+              disabled={isToggling}
+              className={`p-2 rounded-lg transition-colors ${
+                campaign.status === 'active'
+                  ? 'bg-success/10 text-success hover:bg-success/20'
+                  : 'bg-warm-100 text-warm-600 hover:bg-warm-200'
+              } disabled:opacity-50`}
+              title={campaign.status === 'active' ? 'Pausar campaña' : 'Activar campaña'}
+            >
+              <Power className="w-4 h-4" />
+            </button>
+
+            {/* Edit */}
+            <Link
+              href={`/dashboard/campaigns/${campaign.id}/edit`}
+              className="p-2 rounded-lg bg-brand-whisper text-brand hover:bg-brand-mist transition-colors"
+              title="Editar campaña"
+            >
+              <Edit2 className="w-4 h-4" />
+            </Link>
+
+            {/* Delete */}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 rounded-lg bg-error/10 text-error hover:bg-error/20 transition-colors"
+              title="Eliminar campaña"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-6 h-6 text-error" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-warm-900 mb-2">
+                  ¿Eliminar campaña?
+                </h3>
+                <p className="text-sm text-warm-600 mb-1">
+                  Estás a punto de eliminar la campaña <strong>&quot;{campaign.name}&quot;</strong>.
+                </p>
+                <p className="text-sm text-warm-600">
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="ghost"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-error text-white rounded-lg hover:bg-error-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+              >
+                {!isDeleting && <Trash2 className="w-4 h-4" />}
+                {isDeleting ? 'Eliminando...' : 'Eliminar Campaña'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
