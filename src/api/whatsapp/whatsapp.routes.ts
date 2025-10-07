@@ -178,4 +178,69 @@ router.post('/disconnect/:businessId', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/v1/whatsapp/test-connection
+ * Test WhatsApp connectivity by sending a test message
+ */
+router.post('/test-connection', authenticate, async (req, res, next) => {
+  try {
+    const { businessId, phone } = req.body;
+
+    // Validate input
+    if (!businessId || !phone) {
+      return res.status(400).json({
+        error: 'businessId y phone son requeridos',
+      });
+    }
+
+    // Verify user owns this business
+    if (!req.user || req.user.businessId !== businessId) {
+      return res.status(403).json({
+        error: 'No tienes permiso para acceder a este negocio',
+      });
+    }
+
+    const instanceName = evolutionManager.generateInstanceName(businessId);
+
+    try {
+      // Check if instance is connected
+      const status = await evolutionManager.getConnectionStatus(instanceName);
+      if (!status.connected) {
+        return res.status(400).json({
+          error: 'WhatsApp no está conectado. Por favor, conecta WhatsApp primero.',
+        });
+      }
+
+      // Send test message
+      const testMessage = '¡Felicidades! WhatsApp funciona correctamente. 🎉\n\nTu cuenta está lista para enviar mensajes automáticos a tus clientes.';
+
+      await evolutionManager.sendTextMessage(
+        instanceName,
+        phone,
+        testMessage
+      );
+
+      res.json({
+        success: true,
+        message: 'Mensaje de prueba enviado exitosamente',
+        phone,
+      });
+    } catch (error: any) {
+      console.error('Test connection error:', error);
+
+      if (error.message.includes('NOT_FOUND') || error.message.includes('INSTANCE_NOT_FOUND')) {
+        return res.status(400).json({
+          error: 'Instancia de WhatsApp no encontrada. Por favor, conecta WhatsApp primero.',
+        });
+      }
+
+      return res.status(500).json({
+        error: error.message || 'Error al enviar mensaje de prueba',
+      });
+    }
+  } catch (error) {
+    return next(error);
+  }
+});
+
 export default router;

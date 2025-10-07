@@ -49,6 +49,8 @@ export default function SettingsPage() {
   const [loadingWhatsApp, setLoadingWhatsApp] = useState(true);
   const [refreshingQR, setRefreshingQR] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Fetch business settings
   useEffect(() => {
@@ -175,6 +177,93 @@ export default function SettingsPage() {
       alert('Error al guardar configuración');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const validatePhone = (phone: string): { valid: boolean; formatted?: string; error?: string } => {
+    if (!phone || phone.trim() === '') {
+      return { valid: false, error: 'El número de teléfono es requerido' };
+    }
+
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+
+    // Check if it's 9 digits (Peru format without country code)
+    if (digitsOnly.length === 9) {
+      return { valid: true, formatted: `+51${digitsOnly}` };
+    }
+
+    // Check if it already has country code +51
+    if (digitsOnly.length === 11 && digitsOnly.startsWith('51')) {
+      return { valid: true, formatted: `+${digitsOnly}` };
+    }
+
+    return {
+      valid: false,
+      error: 'El número debe tener 9 dígitos (formato Perú)'
+    };
+  };
+
+  const maskPhone = (phone: string): string => {
+    const digitsOnly = phone.replace(/\D/g, '');
+    if (digitsOnly.length >= 9) {
+      const lastDigits = digitsOnly.slice(-4);
+      return `+51 XXX XXX ${lastDigits}`;
+    }
+    return phone;
+  };
+
+  const handleTestWhatsApp = async () => {
+    setTestingConnection(true);
+    setTestResult(null);
+
+    try {
+      // Validate phone
+      const validation = validatePhone(businessSettings.phone || '');
+      if (!validation.valid) {
+        setTestResult({ success: false, message: validation.error || 'Número inválido' });
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setTestResult({ success: false, message: 'Sesión expirada. Inicia sesión nuevamente.' });
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/whatsapp/test-connection`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          businessId,
+          phone: validation.formatted,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setTestResult({
+          success: true,
+          message: `¡Mensaje enviado exitosamente a ${maskPhone(validation.formatted!)}!`
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.error || 'Error al enviar mensaje de prueba'
+        });
+      }
+    } catch (error) {
+      console.error('Error testing WhatsApp:', error);
+      setTestResult({
+        success: false,
+        message: 'Error al conectar con el servidor'
+      });
+    } finally {
+      setTestingConnection(false);
     }
   };
 
@@ -384,6 +473,47 @@ export default function SettingsPage() {
                 <p className="text-sm text-warm-600">
                   Tu cuenta de WhatsApp está conectada y lista para enviar mensajes automáticos a tus clientes.
                 </p>
+
+                {/* Test Connection Section */}
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold text-warm-900 mb-3">Probar Conectividad</h3>
+                  <p className="text-sm text-warm-600 mb-4">
+                    Envía un mensaje de prueba a tu número para verificar que WhatsApp funciona correctamente.
+                  </p>
+
+                  {businessSettings.phone && (
+                    <p className="text-sm text-warm-700 mb-3">
+                      Se enviará un mensaje a: <strong>{maskPhone(businessSettings.phone)}</strong>
+                    </p>
+                  )}
+
+                  {testResult && (
+                    <div className={`p-3 rounded-lg mb-3 ${
+                      testResult.success
+                        ? 'bg-success/10 border-2 border-success/20'
+                        : 'bg-error/10 border-2 border-error/20'
+                    }`}>
+                      <p className={`text-sm ${testResult.success ? 'text-success-dark' : 'text-error-dark'}`}>
+                        {testResult.message}
+                      </p>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="secondary"
+                    onClick={handleTestWhatsApp}
+                    isLoading={testingConnection}
+                    disabled={!businessSettings.phone || testingConnection}
+                  >
+                    {testingConnection ? 'Enviando...' : 'Enviar Mensaje de Prueba'}
+                  </Button>
+
+                  {!businessSettings.phone && (
+                    <p className="text-sm text-warning-dark mt-2">
+                      Por favor, guarda tu número de teléfono primero para probar la conectividad.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
