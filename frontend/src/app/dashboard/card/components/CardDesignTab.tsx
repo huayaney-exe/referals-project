@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { supabase } from '@/lib/supabase';
 import { useBusiness } from '@/lib/hooks/useBusiness';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
@@ -11,7 +12,7 @@ import { Save, Palette, Award } from 'lucide-react';
 
 export function CardDesignTab() {
   const { user } = useAuth();
-  const businessId = user?.user_metadata?.business_id;
+  const { businessId } = useBusinessContext();
 
   const { data: business, isLoading, refetch } = useBusiness(businessId || '');
 

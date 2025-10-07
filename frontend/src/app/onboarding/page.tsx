@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { useOnboardingStatus, useCompleteOnboarding, useTrackStep } from '@/lib/hooks/useOnboarding';
 import { ProgressIndicator } from './components/ProgressIndicator';
@@ -15,6 +16,7 @@ import type { RewardConfig, CardDesign } from '@/lib/stores/onboarding-store';
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { businessId: contextBusinessId } = useBusinessContext();
 
   const {
     currentStep,
@@ -76,7 +78,7 @@ export default function OnboardingPage() {
   };
 
   const handleLaunchComplete = async (qrDownloaded: boolean) => {
-    const businessId = user?.user_metadata?.business_id;
+    const businessId = contextBusinessId;
     if (!rewardConfig || !cardDesign || !businessId) return;
 
     trackStepCompletion(3, { qr_downloaded: qrDownloaded });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useCampaigns, useToggleCampaign, useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
@@ -14,8 +15,8 @@ import { es } from 'date-fns/locale';
 
 export default function CampaignsPage() {
   const { user, loading: authLoading } = useAuth();
-  const businessId = user?.user_metadata?.business_id || '';
-  const { data: campaigns, isLoading } = useCampaigns(businessId);
+  const { businessId } = useBusinessContext();
+  const { data: campaigns, isLoading } = useCampaigns(businessId || '');
   const searchParams = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
 

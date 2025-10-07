@@ -21,13 +21,15 @@ const businessSchema = z.object({
   category: z.string().max(100).optional(),
   reward_structure: rewardStructureSchema,
   logo_url: z.string().url('Invalid URL format').optional(),
+  owner_id: z.string().uuid('Invalid owner ID format'), // Production-grade: foreign key to auth.users
 });
 
 export type CreateBusinessInput = z.infer<typeof businessSchema>;
-export type UpdateBusinessInput = Partial<Omit<CreateBusinessInput, 'email'>>;
+export type UpdateBusinessInput = Partial<Omit<CreateBusinessInput, 'email' | 'owner_id'>>; // owner_id immutable
 
 export interface Business {
   id: string;
+  owner_id: string; // Foreign key to auth.users
   email: string;
   name: string;
   phone?: string | null;

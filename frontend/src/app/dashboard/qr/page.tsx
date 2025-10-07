@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
@@ -10,8 +11,8 @@ import QRCode from 'qrcode';
 
 export default function QRCodePage() {
   const { user } = useAuth();
-  const businessId = user?.user_metadata?.business_id;
-  const businessName = user?.user_metadata?.business_name || 'Tu Negocio';
+  const { businessId, business } = useBusinessContext();
+  const businessName = business?.name || user?.user_metadata?.business_name || 'Tu Negocio';
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [qrGenerated, setQrGenerated] = useState(false);
   const [whatsappConnected, setWhatsappConnected] = useState<boolean | null>(null);

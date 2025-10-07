@@ -9,6 +9,7 @@ import { Button } from '@/design-system/primitives/Button/Button';
 import { Progress } from '@/design-system/primitives/Progress/Progress';
 import { TrendingUp, Users, Gift, MessageCircle, X, CreditCard, QrCode as QrCodeIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useCustomerActivityMetrics, useStampTimeline, useCampaignPerformance } from '@/lib/hooks/useAnalytics';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 import { useCampaigns } from '@/lib/hooks/useCampaigns';
@@ -21,7 +22,7 @@ import { SimpleOnboardingChecklist } from '@/components/SimpleOnboardingChecklis
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const businessId = user?.user_metadata?.business_id;
+  const { businessId } = useBusinessContext();
   const router = useRouter();
   const searchParams = useSearchParams();
   const showOnboardingComplete = searchParams?.get('onboarding') === 'complete';

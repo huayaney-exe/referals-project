@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
 import { Button } from '@/design-system/primitives/Button/Button';
@@ -29,7 +30,7 @@ interface WhatsAppStatus {
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const businessId = user?.user_metadata?.business_id;
+  const { businessId, business, isLoading: loadingBusinessContext } = useBusinessContext();
 
   // Business profile state
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({

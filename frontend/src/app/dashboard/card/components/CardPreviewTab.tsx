@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { supabase } from '@/lib/supabase';
 import { useBusiness } from '@/lib/hooks/useBusiness';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/design-system/primitives/Card/Card';
@@ -11,8 +12,8 @@ import QRCode from 'qrcode';
 
 export function CardPreviewTab() {
   const { user } = useAuth();
-  const businessId = user?.user_metadata?.business_id;
-  const businessName = user?.user_metadata?.business_name || 'Tu Negocio';
+  const { businessId, business: contextBusiness } = useBusinessContext();
+  const businessName = contextBusiness?.name || user?.user_metadata?.business_name || 'Tu Negocio';
 
   const { data: business, isLoading: loadingBusiness } = useBusiness(businessId || '');
 

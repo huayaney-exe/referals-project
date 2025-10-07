@@ -29,29 +29,15 @@ router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const validated = registerSchema.parse(req.body);
 
-    // Create business in database first
-    const business = await BusinessService.create({
-      email: validated.email,
-      name: validated.businessName,
-      phone: validated.phone,
-      reward_structure: validated.rewardStructure,
-    });
-
-    // Create Supabase auth user
+    // Step 1: Create Supabase auth user FIRST to get user_id
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: validated.email,
       password: validated.password,
       email_confirm: true,
-      user_metadata: {
-        business_id: business.id,
-        business_name: validated.businessName,
-      },
     });
 
     if (authError) {
       console.error('Supabase auth error:', authError);
-      // Rollback: delete business if auth creation fails
-      await BusinessService.deactivate(business.id);
 
       // Handle specific error cases
       if (authError.status === 422 && authError.code === 'email_exists') {
@@ -65,6 +51,36 @@ router.post('/register', authLimiter, async (req, res, next) => {
       }
 
       throw authError;
+    }
+
+    // Step 2: Create business in database with owner_id foreign key
+    const business = await BusinessService.create({
+      email: validated.email,
+      name: validated.businessName,
+      phone: validated.phone,
+      reward_structure: validated.rewardStructure,
+      owner_id: authData.user.id, // Production-grade: DB foreign key
+    });
+
+    // Step 3: Update user with app_metadata (secure, admin-only)
+    // Also keep user_metadata for backwards compatibility during migration
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
+      app_metadata: {
+        business_id: business.id, // Source of truth for JWT claims
+        business_name: validated.businessName,
+      },
+      user_metadata: {
+        business_id: business.id, // Backwards compatibility (deprecated)
+        business_name: validated.businessName,
+      },
+    });
+
+    if (updateError) {
+      console.error('Failed to update user metadata:', updateError);
+      // Rollback: delete both auth user and business
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      await BusinessService.deactivate(business.id);
+      throw updateError;
     }
 
     // Create Evolution API instance for WhatsApp
