@@ -331,7 +331,7 @@ export default function SettingsPage() {
                   <div className="flex flex-col items-center gap-4">
                     <div className="p-4 bg-white rounded-lg border-2 border-warm-200">
                       <Image
-                        src={whatsappStatus.qr_code}
+                        src={`data:image/png;base64,${whatsappStatus.qr_code}`}
                         alt="WhatsApp QR Code"
                         width={300}
                         height={300}
