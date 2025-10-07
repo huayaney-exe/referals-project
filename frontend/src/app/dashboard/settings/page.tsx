@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/des
 import { Button } from '@/design-system/primitives/Button/Button';
 import { Input } from '@/design-system/primitives/Input/Input';
 import { Building2, Settings as SettingsIcon, MessageCircle, Save, RefreshCw } from 'lucide-react';
+import { Badge } from '@/design-system/primitives/Badge/Badge';
 import Image from 'next/image';
 
 interface BusinessSettings {
@@ -47,6 +48,7 @@ export default function SettingsPage() {
   const [whatsappStatus, setWhatsappStatus] = useState<WhatsAppStatus | null>(null);
   const [loadingWhatsApp, setLoadingWhatsApp] = useState(true);
   const [refreshingQR, setRefreshingQR] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
 
   // Fetch business settings
   useEffect(() => {
@@ -127,10 +129,12 @@ export default function SettingsPage() {
 
   const handleRefreshQR = async () => {
     setRefreshingQR(true);
+    setQrError(null); // Clear previous errors
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        alert('Sesión expirada. Por favor inicia sesión nuevamente.');
+        setQrError('Sesión expirada. Por favor inicia sesión nuevamente.');
         return;
       }
 
@@ -144,11 +148,20 @@ export default function SettingsPage() {
         const data = await response.json();
         setWhatsappStatus(data);
       } else {
-        alert('Error al generar código QR de WhatsApp');
+        const errorData = await response.json().catch(() => ({}));
+
+        // Show user-friendly error messages
+        if (response.status === 503) {
+          setQrError('El servicio de WhatsApp no está disponible temporalmente. Por favor, intenta de nuevo en unos minutos.');
+        } else if (response.status === 500) {
+          setQrError('Error al generar código QR. Contacta a soporte si el problema persiste.');
+        } else {
+          setQrError(errorData.error?.message || 'Error al generar código QR de WhatsApp');
+        }
       }
     } catch (error) {
       console.error('Error refreshing QR:', error);
-      alert('Error al conectar con el servidor');
+      setQrError('Error al conectar con el servidor. Verifica tu conexión a internet e intenta nuevamente.');
     } finally {
       setRefreshingQR(false);
     }
@@ -267,7 +280,10 @@ export default function SettingsPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-success" />
-              <CardTitle>Configuración de WhatsApp</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Configuración de WhatsApp
+                <Badge variant="outline" className="text-xs">Beta</Badge>
+              </CardTitle>
             </div>
             <CardDescription>Conecta tu cuenta de WhatsApp para enviar mensajes automáticos</CardDescription>
           </CardHeader>
@@ -300,9 +316,16 @@ export default function SettingsPage() {
                 <div className="p-4 bg-warning/10 border-2 border-warning/20 rounded-lg">
                   <p className="font-semibold text-warning-dark">WhatsApp No Conectado</p>
                   <p className="text-sm text-warm-600 mt-1">
-                    Escanea el código QR con WhatsApp para conectar tu cuenta
+                    Haz clic en &quot;Conectar WhatsApp&quot; para generar un código QR y vincula tu cuenta
                   </p>
                 </div>
+
+                {/* Error message display */}
+                {qrError && (
+                  <div className="p-4 bg-error/10 border-2 border-error/20 rounded-lg">
+                    <p className="text-error-dark text-sm font-medium">{qrError}</p>
+                  </div>
+                )}
 
                 {whatsappStatus?.qr_code ? (
                   <div className="flex flex-col items-center gap-4">
@@ -330,14 +353,14 @@ export default function SettingsPage() {
                       isLoading={refreshingQR}
                       leftIcon={<RefreshCw className="w-4 h-4" />}
                     >
-                      Actualizar QR
+                      Refrescar Código
                     </Button>
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-warm-600 mb-4">No hay código QR disponible</p>
+                    <p className="text-warm-600 mb-4">Haz clic en el botón para comenzar</p>
                     <Button variant="primary" onClick={handleRefreshQR} isLoading={refreshingQR}>
-                      Generar Código QR
+                      Conectar WhatsApp (Beta)
                     </Button>
                   </div>
                 )}
