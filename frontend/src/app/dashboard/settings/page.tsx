@@ -166,13 +166,25 @@ export default function SettingsPage() {
         return;
       }
 
+      // Format phone with country code before saving
+      const dataToSave = { ...businessSettings };
+      if (dataToSave.phone) {
+        const digitsOnly = dataToSave.phone.replace(/\D/g, '');
+        // Add +51 if not present
+        if (!dataToSave.phone.startsWith('+51') && !dataToSave.phone.startsWith('51')) {
+          dataToSave.phone = `+51${digitsOnly}`;
+        } else if (dataToSave.phone.startsWith('51') && !dataToSave.phone.startsWith('+')) {
+          dataToSave.phone = `+${digitsOnly}`;
+        }
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify(businessSettings),
+        body: JSON.stringify(dataToSave),
       });
 
       if (response.ok) {

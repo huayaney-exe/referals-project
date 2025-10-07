@@ -24,7 +24,7 @@ router.get('/:id', async (req, res) => {
     // Fetch public business information (admin client bypasses RLS)
     const { data: business, error } = await supabaseAdmin
       .from('businesses')
-      .select('id, name, logo_url, category, reward_structure, card_design, brand_colors, is_active')
+      .select('id, name, email, phone, logo_url, category, reward_structure, card_design, brand_colors, is_active')
       .eq('id', id)
       .eq('is_active', true)
       .single();
@@ -39,6 +39,8 @@ router.get('/:id', async (req, res) => {
     res.json({
       id: business.id,
       name: business.name,
+      email: business.email,
+      phone: business.phone,
       logo_url: business.logo_url,
       category: business.category,
       reward_structure: business.reward_structure,
