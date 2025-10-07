@@ -14,10 +14,9 @@ export interface ConnectionStatus {
 }
 
 export interface QRCodeResponse {
-  qrcode: {
-    base64: string;
-    code: string;
-  };
+  base64: string; // Full data URI: "data:image/png;base64,iVBORw0KG..."
+  code: string; // WhatsApp pairing code: "2@..."
+  pairingCode: string | null; // 8-digit code for phone pairing
 }
 
 export class EvolutionInstanceManager {
@@ -98,20 +97,11 @@ export class EvolutionInstanceManager {
     try {
       const response = await this.client.get(`/instance/connect/${instanceName}`);
 
-      console.log('Evolution API QR response structure:', {
-        hasQrcode: !!response.data?.qrcode,
-        hasBase64: !!response.data?.qrcode?.base64,
-        hasCode: !!response.data?.code,
-        qrcodeKeys: response.data?.qrcode ? Object.keys(response.data.qrcode) : [],
-        base64Preview: response.data?.qrcode?.base64?.substring(0, 50),
-      });
-
-      if (response.data?.qrcode?.base64) {
-        return response.data.qrcode.base64;
-      }
-
-      if (response.data?.code) {
-        return response.data.code;
+      // Evolution API v2 returns: { base64: "data:image/png;base64,...", code: "2@...", pairingCode: null }
+      // We need the base64 field which contains the complete data URI
+      if (response.data?.base64) {
+        // base64 field already includes "data:image/png;base64," prefix
+        return response.data.base64.replace('data:image/png;base64,', ''); // Remove prefix, frontend adds it back
       }
 
       throw new Error('QR_CODE_NOT_AVAILABLE');
