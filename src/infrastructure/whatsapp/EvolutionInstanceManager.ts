@@ -98,6 +98,14 @@ export class EvolutionInstanceManager {
     try {
       const response = await this.client.get(`/instance/connect/${instanceName}`);
 
+      console.log('Evolution API QR response structure:', {
+        hasQrcode: !!response.data?.qrcode,
+        hasBase64: !!response.data?.qrcode?.base64,
+        hasCode: !!response.data?.code,
+        qrcodeKeys: response.data?.qrcode ? Object.keys(response.data.qrcode) : [],
+        base64Preview: response.data?.qrcode?.base64?.substring(0, 50),
+      });
+
       if (response.data?.qrcode?.base64) {
         return response.data.qrcode.base64;
       }
