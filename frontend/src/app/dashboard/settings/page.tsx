@@ -282,7 +282,7 @@ export default function SettingsPage() {
               <MessageCircle className="w-5 h-5 text-success" />
               <CardTitle className="flex items-center gap-2">
                 Configuración de WhatsApp
-                <Badge variant="outline" className="text-xs">Beta</Badge>
+                <Badge variant="info" className="text-xs">Beta</Badge>
               </CardTitle>
             </div>
             <CardDescription>Conecta tu cuenta de WhatsApp para enviar mensajes automáticos</CardDescription>
