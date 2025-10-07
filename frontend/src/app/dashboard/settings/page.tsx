@@ -280,10 +280,50 @@ export default function SettingsPage() {
 
   const maskPhone = (phone: string): string => {
     const digitsOnly = phone.replace(/\D/g, '');
-    if (digitsOnly.length >= 9) {
-      const lastDigits = digitsOnly.slice(-4);
-      return `+51 XXX XXX ${lastDigits}`;
+
+    // Extract country code and local number
+    let countryCode = '+51';
+    let localNumber = digitsOnly;
+
+    // Remove country code from digits to get local number only
+    if (digitsOnly.startsWith('51')) {
+      countryCode = '+51';
+      localNumber = digitsOnly.substring(2); // Remove '51'
+    } else if (digitsOnly.startsWith('52')) {
+      countryCode = '+52';
+      localNumber = digitsOnly.substring(2);
+    } else if (digitsOnly.startsWith('54')) {
+      countryCode = '+54';
+      localNumber = digitsOnly.substring(2);
+    } else if (digitsOnly.startsWith('55')) {
+      countryCode = '+55';
+      localNumber = digitsOnly.substring(2);
+    } else if (digitsOnly.startsWith('56')) {
+      countryCode = '+56';
+      localNumber = digitsOnly.substring(2);
+    } else if (digitsOnly.startsWith('57')) {
+      countryCode = '+57';
+      localNumber = digitsOnly.substring(2);
+    } else if (digitsOnly.startsWith('58')) {
+      countryCode = '+58';
+      localNumber = digitsOnly.substring(2);
+    } else if (digitsOnly.startsWith('593')) {
+      countryCode = '+593';
+      localNumber = digitsOnly.substring(3); // Remove '593'
+    } else if (digitsOnly.startsWith('1')) {
+      countryCode = '+1';
+      localNumber = digitsOnly.substring(1);
+    } else if (digitsOnly.startsWith('34')) {
+      countryCode = '+34';
+      localNumber = digitsOnly.substring(2);
     }
+
+    // Mask local number only (show last 4 digits)
+    if (localNumber.length >= 9) {
+      const lastDigits = localNumber.slice(-4);
+      return `${countryCode} XXX XXX ${lastDigits}`;
+    }
+
     return phone;
   };
 
