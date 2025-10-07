@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { EvolutionInstanceManager } from '../../infrastructure/whatsapp/EvolutionInstanceManager';
+import { evolutionWhatsAppService } from '../../infrastructure/whatsapp/EvolutionWhatsAppService';
 import { authenticate } from '../middleware/auth.middleware';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,6 +10,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Rate limiting cache for test messages (in-memory for MVP, move to Redis for production scale)
+const testMessageRateLimit = new Map<string, number>();
+const TEST_MESSAGE_COOLDOWN = 5 * 60 * 1000; // 5 minutes
 
 /**
  * GET /api/v1/whatsapp/status/:businessId
@@ -200,42 +205,89 @@ router.post('/test-connection', authenticate, async (req, res, next) => {
       });
     }
 
+    // Rate limiting check
+    const lastTestTime = testMessageRateLimit.get(businessId);
+    const now = Date.now();
+
+    if (lastTestTime && (now - lastTestTime) < TEST_MESSAGE_COOLDOWN) {
+      const remainingSeconds = Math.ceil((TEST_MESSAGE_COOLDOWN - (now - lastTestTime)) / 1000);
+      return res.status(429).json({
+        error: `Por favor espera ${Math.ceil(remainingSeconds / 60)} minutos antes de enviar otro mensaje de prueba.`,
+        retryAfter: remainingSeconds,
+      });
+    }
+
+    // Validate phone number format (Peru mobile)
+    if (!evolutionWhatsAppService.isValidPeruPhone(phone)) {
+      return res.status(400).json({
+        error: 'Número de teléfono inválido. Debe ser un número móvil de Perú (+51 9XX XXX XXX).',
+      });
+    }
+
     const instanceName = evolutionManager.generateInstanceName(businessId);
 
     try {
       // Check if instance is connected
-      const status = await evolutionManager.getConnectionStatus(instanceName);
+      const status = await evolutionWhatsAppService.getInstanceStatus(instanceName);
       if (!status.connected) {
         return res.status(400).json({
           error: 'WhatsApp no está conectado. Por favor, conecta WhatsApp primero.',
         });
       }
 
-      // Send test message
+      // Send test message using production service
       const testMessage = '¡Felicidades! WhatsApp funciona correctamente. 🎉\n\nTu cuenta está lista para enviar mensajes automáticos a tus clientes.';
 
-      await evolutionManager.sendTextMessage(
+      await evolutionWhatsAppService.sendMessage({
         instanceName,
         phone,
-        testMessage
-      );
+        text: testMessage,
+      });
+
+      // Update rate limit
+      testMessageRateLimit.set(businessId, now);
+
+      // TODO: Add audit logging when whatsapp_test_logs table is created
+      console.log(`Test message sent successfully - Business: ${businessId}, Phone: ${evolutionWhatsAppService.formatPhoneNumber(phone)}`);
 
       res.json({
         success: true,
         message: 'Mensaje de prueba enviado exitosamente',
-        phone,
       });
     } catch (error: any) {
       console.error('Test connection error:', error);
 
-      if (error.message.includes('NOT_FOUND') || error.message.includes('INSTANCE_NOT_FOUND')) {
+      // TODO: Add audit logging for failed attempts when table is created
+      console.log(`Test message failed - Business: ${businessId}, Error: ${error.message}`);
+
+      // Return user-friendly error messages
+      if (error.message.includes('INSTANCE_NOT_FOUND')) {
         return res.status(400).json({
           error: 'Instancia de WhatsApp no encontrada. Por favor, conecta WhatsApp primero.',
         });
       }
 
+      if (error.message.includes('INSTANCE_NOT_CONNECTED')) {
+        return res.status(400).json({
+          error: 'WhatsApp no está conectado. Por favor, verifica tu conexión.',
+        });
+      }
+
+      if (error.message.includes('INVALID_PHONE') || error.message.includes('INVALID_PERU_PHONE_FORMAT')) {
+        return res.status(400).json({
+          error: 'Número de teléfono inválido. Verifica el formato.',
+        });
+      }
+
+      if (error.message.includes('REQUEST_TIMEOUT')) {
+        return res.status(504).json({
+          error: 'Tiempo de espera agotado. Por favor intenta nuevamente.',
+        });
+      }
+
+      // Generic error for production
       return res.status(500).json({
-        error: error.message || 'Error al enviar mensaje de prueba',
+        error: 'Error al enviar mensaje de prueba. Por favor intenta nuevamente.',
       });
     }
   } catch (error) {

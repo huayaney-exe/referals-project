@@ -51,6 +51,7 @@ export default function SettingsPage() {
   const [qrError, setQrError] = useState<string | null>(null);
   const [testingConnection, setTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testCooldown, setTestCooldown] = useState<number>(0);
 
   // Fetch business settings
   useEffect(() => {
@@ -190,11 +191,25 @@ export default function SettingsPage() {
 
     // Check if it's 9 digits (Peru format without country code)
     if (digitsOnly.length === 9) {
+      // Must start with 9 (Peru mobile prefix)
+      if (!digitsOnly.startsWith('9')) {
+        return {
+          valid: false,
+          error: 'El número móvil debe comenzar con 9'
+        };
+      }
       return { valid: true, formatted: `+51${digitsOnly}` };
     }
 
     // Check if it already has country code +51
     if (digitsOnly.length === 11 && digitsOnly.startsWith('51')) {
+      // Must start with 519 (country code + mobile prefix)
+      if (!digitsOnly.startsWith('519')) {
+        return {
+          valid: false,
+          error: 'El número móvil debe comenzar con 9'
+        };
+      }
       return { valid: true, formatted: `+${digitsOnly}` };
     }
 
@@ -212,6 +227,17 @@ export default function SettingsPage() {
     }
     return phone;
   };
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (testCooldown > 0) {
+      const timer = setInterval(() => {
+        setTestCooldown((prev) => Math.max(0, prev - 1));
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [testCooldown]);
 
   const handleTestWhatsApp = async () => {
     setTestingConnection(true);
@@ -249,6 +275,16 @@ export default function SettingsPage() {
         setTestResult({
           success: true,
           message: `¡Mensaje enviado exitosamente a ${maskPhone(validation.formatted!)}!`
+        });
+        // Set 5-minute cooldown
+        setTestCooldown(300);
+      } else if (response.status === 429) {
+        // Rate limited
+        const retryAfter = data.retryAfter || 300;
+        setTestCooldown(retryAfter);
+        setTestResult({
+          success: false,
+          message: data.error || 'Por favor espera antes de enviar otro mensaje de prueba.'
         });
       } else {
         setTestResult({
@@ -503,14 +539,24 @@ export default function SettingsPage() {
                     variant="secondary"
                     onClick={handleTestWhatsApp}
                     isLoading={testingConnection}
-                    disabled={!businessSettings.phone || testingConnection}
+                    disabled={!businessSettings.phone || testingConnection || testCooldown > 0}
                   >
-                    {testingConnection ? 'Enviando...' : 'Enviar Mensaje de Prueba'}
+                    {testingConnection
+                      ? 'Enviando...'
+                      : testCooldown > 0
+                      ? `Espera ${Math.ceil(testCooldown / 60)} min`
+                      : 'Enviar Mensaje de Prueba'}
                   </Button>
 
                   {!businessSettings.phone && (
                     <p className="text-sm text-warning-dark mt-2">
                       Por favor, guarda tu número de teléfono primero para probar la conectividad.
+                    </p>
+                  )}
+
+                  {testCooldown > 0 && (
+                    <p className="text-sm text-info-dark mt-2">
+                      Podrás enviar otro mensaje de prueba en {Math.ceil(testCooldown / 60)} minutos.
                     </p>
                   )}
                 </div>
