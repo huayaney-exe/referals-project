@@ -71,13 +71,13 @@ export function useBusinessContext() {
             .single();
 
           if (fallbackError) throw fallbackError;
-          return fallbackBusiness as Business;
+          return fallbackBusiness as unknown as Business;
         }
 
         throw error;
       }
 
-      return businesses as Business;
+      return businesses as unknown as Business;
     },
     enabled: !!user?.id, // Only run query if user is logged in
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes

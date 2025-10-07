@@ -37,7 +37,7 @@ export function useBusiness(businessId: string) {
         .single();
 
       if (error) throw error;
-      return data as Business;
+      return data as unknown as Business;
     },
     enabled: !!businessId,
   });

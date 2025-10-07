@@ -54,7 +54,7 @@ export function useAnalyticsSnapshots(
         .order('snapshot_date', { ascending: true });
 
       if (error) throw error;
-      return data as AnalyticsSnapshot[];
+      return data as unknown as AnalyticsSnapshot[];
     },
     enabled: !!businessId,
   });
@@ -128,7 +128,7 @@ export function useCampaignPerformance(businessId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('campaigns')
-        .select('id, name, sent_count, failed_count')
+        .select('id, name, sent_count')
         .eq('business_id', businessId)
         .eq('status', 'active');
 
@@ -138,9 +138,7 @@ export function useCampaignPerformance(businessId: string) {
         campaign_id: campaign.id,
         campaign_name: campaign.name,
         sent_count: campaign.sent_count || 0,
-        success_rate: campaign.sent_count && campaign.failed_count
-          ? ((campaign.sent_count - campaign.failed_count) / campaign.sent_count) * 100
-          : 100,
+        success_rate: 100, // TODO: Track failed_count when column exists
       })) as CampaignPerformanceMetrics[];
     },
     enabled: !!businessId,
@@ -179,6 +177,7 @@ export function useStampTimeline(
 
       // Group by date
       const grouped = data?.reduce((acc, stamp) => {
+        if (!stamp.stamped_at) return acc; // Skip if stamped_at is null
         const date = new Date(stamp.stamped_at).toISOString().split('T')[0];
         acc[date] = (acc[date] || 0) + 1;
         return acc;

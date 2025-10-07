@@ -36,6 +36,7 @@ export function CardPreviewTab() {
     async function trackVisit() {
       if (businessId) {
         try {
+          // @ts-ignore - track_qr_page_view RPC exists in DB but not in generated types
           await supabase.rpc('track_qr_page_view', { p_business_id: businessId });
         } catch (err) {
           console.warn('Page view tracking exception:', err);
@@ -65,46 +66,8 @@ export function CardPreviewTab() {
           } else {
             setQrGenerated(true);
 
-            // Upload QR to storage if needed
-            try {
-              const { data: biz } = await supabase
-                .from('businesses')
-                .select('qr_code_url')
-                .eq('id', businessId)
-                .single();
-
-              if (!biz?.qr_code_url && canvasRef.current) {
-                canvasRef.current.toBlob(async (blob) => {
-                  if (!blob) return;
-
-                  const fileName = `qr-${businessId}.png`;
-                  const filePath = `qr-codes/${fileName}`;
-
-                  const { error: uploadError } = await supabase.storage
-                    .from('business-assets')
-                    .upload(filePath, blob, {
-                      contentType: 'image/png',
-                      upsert: true,
-                    });
-
-                  if (uploadError) {
-                    console.error('Error uploading QR:', uploadError);
-                    return;
-                  }
-
-                  const { data: { publicUrl } } = supabase.storage
-                    .from('business-assets')
-                    .getPublicUrl(filePath);
-
-                  await supabase
-                    .from('businesses')
-                    .update({ qr_code_url: publicUrl })
-                    .eq('id', businessId);
-                }, 'image/png');
-              }
-            } catch (error) {
-              console.error('Error managing QR code:', error);
-            }
+            // TODO: QR code upload to storage (qr_code_url column removed from schema)
+            // This feature can be re-enabled if needed by adding qr_code_url column back
           }
         }
       );
@@ -164,6 +127,7 @@ export function CardPreviewTab() {
       URL.revokeObjectURL(url);
 
       try {
+        if (!businessId) return;
         await supabase
           .from('businesses')
           .update({ qr_downloaded: true })

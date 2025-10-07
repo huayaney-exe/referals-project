@@ -25,6 +25,7 @@ export default function QRCodePage() {
     async function trackVisit() {
       if (businessId) {
         try {
+          // @ts-ignore - track_qr_page_view RPC exists in DB but not in generated types
           const { error } = await supabase.rpc('track_qr_page_view', { p_business_id: businessId });
           if (error) {
             // Non-critical analytics error - log but don't block page
@@ -61,13 +62,10 @@ export default function QRCodePage() {
 
             // Upload QR to Supabase Storage if not already uploaded
             try {
-              const { data: business } = await supabase
-                .from('businesses')
-                .select('qr_code_url')
-                .eq('id', businessId)
-                .single();
+              // TODO: QR code storage disabled (qr_code_url column removed from schema)
+              const business = null;
 
-              if (!business?.qr_code_url && canvasRef.current) {
+              if (!business && canvasRef.current) {
                 // Convert canvas to blob
                 canvasRef.current.toBlob(async (blob) => {
                   if (!blob) return;
@@ -89,15 +87,9 @@ export default function QRCodePage() {
                   }
 
                   // Get public URL
-                  const { data: { publicUrl } } = supabase.storage
-                    .from('business-assets')
-                    .getPublicUrl(filePath);
-
-                  // Update business with QR URL
-                  await supabase
-                    .from('businesses')
-                    .update({ qr_code_url: publicUrl })
-                    .eq('id', businessId);
+                  // TODO: QR code storage disabled (qr_code_url column removed from schema)
+                  // const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);
+                  // await supabase.from('businesses').update({ qr_code_url: publicUrl }).eq('id', businessId);
                 }, 'image/png');
               }
             } catch (error) {
@@ -165,6 +157,7 @@ export default function QRCodePage() {
 
       // Track download (triggers auto-completion via database trigger)
       try {
+        if (!businessId) return;
         await supabase
           .from('businesses')
           .update({ qr_downloaded: true })

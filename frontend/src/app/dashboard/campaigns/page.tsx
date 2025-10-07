@@ -215,7 +215,7 @@ function CampaignRow({ campaign }: { campaign: any }) {
               {config.label}
             </Badge>
           </div>
-          <p className="text-sm text-warm-600 line-clamp-1">{campaign.message_template}</p>
+          <p className="text-sm text-warm-600 line-clamp-1">{campaign.message}</p>
         </div>
 
         <div className="flex items-center gap-4">

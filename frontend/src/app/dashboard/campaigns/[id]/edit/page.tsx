@@ -42,8 +42,8 @@ export default function EditCampaignPage() {
 
         if (data) {
           setName(data.name);
-          setMessageTemplate(data.message_template);
-          setStatus(data.status);
+          setMessageTemplate(data.message); // DB schema uses 'message', not 'message_template'
+          setStatus((data.status as 'active' | 'paused' | 'draft') || 'draft'); // Handle null status
         }
       } catch (err) {
         console.error('Error loading campaign:', err);
@@ -74,7 +74,7 @@ export default function EditCampaignPage() {
         id: campaignId,
         updates: {
           name,
-          message_template: messageTemplate,
+          message: messageTemplate, // DB schema uses 'message', not 'message_template'
           status,
         },
       });

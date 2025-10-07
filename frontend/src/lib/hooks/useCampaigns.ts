@@ -5,12 +5,11 @@ export interface Campaign {
   id: string;
   business_id: string;
   name: string;
-  message_template: string;
-  status: 'draft' | 'active' | 'paused' | 'completed';
+  message: string; // DB schema uses 'message', not 'message_template'
+  status: 'draft' | 'active' | 'paused' | 'completed' | null;
   sent_count: number | null;
-  failed_count: number | null;
-  created_at: string;
-  activated_at: string | null;
+  created_at: string | null;
+  // Note: failed_count and activated_at removed - not in database schema
 }
 
 export function useCampaigns(businessId: string) {
@@ -45,7 +44,7 @@ export function useCreateCampaign() {
     mutationFn: async (campaign: {
       business_id: string;
       name: string;
-      message_template: string;
+      message: string; // DB schema uses 'message'
       trigger_type?: string;
       trigger_config?: any;
       status?: string;
@@ -55,7 +54,6 @@ export function useCreateCampaign() {
         .insert({
           ...campaign,
           status: campaign.status || 'draft',
-          message: campaign.message_template, // Also populate legacy message column
         })
         .select()
         .single();

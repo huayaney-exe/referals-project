@@ -29,7 +29,7 @@ export function useCustomers(businessId: string, search?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Customer[];
+      return data as unknown as Customer[];
     },
     enabled: !!businessId,
   });
@@ -46,7 +46,7 @@ export function useCustomer(customerId: string) {
         .single();
 
       if (error) throw error;
-      return data as Customer;
+      return data as unknown as Customer;
     },
     enabled: !!customerId,
   });

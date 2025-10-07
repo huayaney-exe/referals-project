@@ -167,7 +167,7 @@ export default function EnhancedCampaignPage() {
       await createCampaign.mutateAsync({
         business_id: user?.user_metadata?.business_id || '',
         name,
-        message_template: messageTemplate,
+        message: messageTemplate, // DB schema uses 'message'
         trigger_type: trigger.type,
         trigger_config: trigger,
         status,

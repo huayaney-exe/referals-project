@@ -122,6 +122,7 @@ export function SimpleOnboardingChecklist({
       setTimeout(() => setCopied(false), 2000);
 
       // Track copy action via RPC (database trigger handles completion after 2 visits)
+      // @ts-ignore - track_qr_page_view RPC exists in DB but not in generated types
       await supabase.rpc('track_qr_page_view', {
         p_business_id: businessId,
       });
