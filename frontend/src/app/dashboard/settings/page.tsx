@@ -53,6 +53,9 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testCooldown, setTestCooldown] = useState<number>(0);
 
+  // Phone input state
+  const [selectedCountry, setSelectedCountry] = useState<string>('+51');
+
   // Fetch business settings
   useEffect(() => {
     async function fetchBusinessSettings() {
@@ -68,6 +71,20 @@ export default function SettingsPage() {
         if (response.ok) {
           const data = await response.json();
           setBusinessSettings(data);
+
+          // Detect country code from saved phone
+          if (data.phone) {
+            if (data.phone.startsWith('+51')) setSelectedCountry('+51');
+            else if (data.phone.startsWith('+52')) setSelectedCountry('+52');
+            else if (data.phone.startsWith('+54')) setSelectedCountry('+54');
+            else if (data.phone.startsWith('+55')) setSelectedCountry('+55');
+            else if (data.phone.startsWith('+56')) setSelectedCountry('+56');
+            else if (data.phone.startsWith('+57')) setSelectedCountry('+57');
+            else if (data.phone.startsWith('+58')) setSelectedCountry('+58');
+            else if (data.phone.startsWith('+593')) setSelectedCountry('+593');
+            else if (data.phone.startsWith('+1')) setSelectedCountry('+1');
+            else if (data.phone.startsWith('+34')) setSelectedCountry('+34');
+          }
         }
       } catch (error) {
         console.error('Error fetching business settings:', error);
@@ -166,16 +183,12 @@ export default function SettingsPage() {
         return;
       }
 
-      // Format phone with country code before saving
+      // Format phone with selected country code before saving
       const dataToSave = { ...businessSettings };
       if (dataToSave.phone) {
         const digitsOnly = dataToSave.phone.replace(/\D/g, '');
-        // Add +51 if not present
-        if (!dataToSave.phone.startsWith('+51') && !dataToSave.phone.startsWith('51')) {
-          dataToSave.phone = `+51${digitsOnly}`;
-        } else if (dataToSave.phone.startsWith('51') && !dataToSave.phone.startsWith('+')) {
-          dataToSave.phone = `+${digitsOnly}`;
-        }
+        // Always use selected country code
+        dataToSave.phone = `${selectedCountry}${digitsOnly}`;
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`, {
@@ -435,27 +448,40 @@ export default function SettingsPage() {
                 </label>
                 <div className="flex gap-2">
                   <select
-                    className="px-3 py-2 border border-warm-300 rounded-lg bg-white text-warm-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    value="+51"
-                    disabled
+                    className="px-3 py-2 border border-warm-300 rounded-lg bg-white text-warm-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent cursor-pointer"
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
                   >
                     <option value="+51">🇵🇪 +51</option>
+                    <option value="+52">🇲🇽 +52</option>
+                    <option value="+54">🇦🇷 +54</option>
+                    <option value="+55">🇧🇷 +55</option>
+                    <option value="+56">🇨🇱 +56</option>
+                    <option value="+57">🇨🇴 +57</option>
+                    <option value="+58">🇻🇪 +58</option>
+                    <option value="+593">🇪🇨 +593</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+34">🇪🇸 +34</option>
                   </select>
                   <input
                     type="tel"
                     placeholder="900 000 000"
                     className="flex-1 px-3 py-2 border border-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    value={businessSettings.phone?.replace(/^\+51\s?/, '') || ''}
+                    value={businessSettings.phone?.replace(/^\+?\d{1,4}\s?/, '') || ''}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, '');
-                      if (digits.length <= 9) {
+                      if (digits.length <= 15) {
                         setBusinessSettings({ ...businessSettings, phone: digits });
                       }
                     }}
-                    maxLength={11}
+                    maxLength={15}
                   />
                 </div>
-                <p className="text-xs text-warm-600 mt-1">Número móvil de 9 dígitos (comienza con 9)</p>
+                <p className="text-xs text-warm-600 mt-1">
+                  {selectedCountry === '+51'
+                    ? 'Número móvil de 9 dígitos (comienza con 9)'
+                    : 'Ingresa tu número sin el código de país'}
+                </p>
               </div>
               <Input
                 label="Categoría"
