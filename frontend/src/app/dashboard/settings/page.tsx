@@ -355,7 +355,7 @@ export default function SettingsPage() {
       // Validate phone
       const validation = validatePhone(completePhone);
       console.log('✅ Validation result:', validation);
-      if (!validation.valid) {
+      if (!validation.valid || !validation.formatted) {
         setTestResult({ success: false, message: validation.error || 'Número inválido' });
         return;
       }
