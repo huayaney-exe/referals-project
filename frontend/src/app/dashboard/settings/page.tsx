@@ -53,7 +53,12 @@ export default function SettingsPage() {
   // Fetch business settings
   useEffect(() => {
     async function fetchBusinessSettings() {
-      if (!businessId) return;
+      if (!businessId) {
+        // CRITICAL FIX: Set loading to false even when businessId is null
+        // This prevents infinite loading state when useBusinessContext fails
+        setLoadingBusiness(false);
+        return;
+      }
 
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`);
@@ -219,11 +224,28 @@ export default function SettingsPage() {
     }
   };
 
-  if (loadingBusiness) {
+  // Loading state
+  if (loadingBusiness || loadingBusinessContext) {
     return (
       <div className="p-8 max-w-5xl mx-auto">
         <div className="text-center py-12">
           <p className="text-warm-600">Cargando configuración...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state: No business context available
+  if (!businessId && !loadingBusinessContext) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <div className="p-6 bg-error/10 border-2 border-error/20 rounded-lg max-w-md mx-auto">
+            <p className="text-error-dark font-semibold mb-2">No se pudo cargar la información del negocio</p>
+            <p className="text-sm text-warm-600">
+              Por favor, intenta cerrar sesión y volver a iniciar sesión. Si el problema persiste, contacta a soporte.
+            </p>
+          </div>
         </div>
       </div>
     );
