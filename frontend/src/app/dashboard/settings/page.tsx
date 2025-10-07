@@ -281,47 +281,48 @@ export default function SettingsPage() {
   const maskPhone = (phone: string): string => {
     const digitsOnly = phone.replace(/\D/g, '');
 
-    // Extract country code and local number
-    let countryCode = '+51';
+    // Try to parse country code - check longer codes first
     let localNumber = digitsOnly;
+    let countryCode = '+51'; // default
 
-    // Remove country code from digits to get local number only
-    if (digitsOnly.startsWith('51')) {
-      countryCode = '+51';
-      localNumber = digitsOnly.substring(2); // Remove '51'
-    } else if (digitsOnly.startsWith('52')) {
-      countryCode = '+52';
-      localNumber = digitsOnly.substring(2);
-    } else if (digitsOnly.startsWith('54')) {
-      countryCode = '+54';
-      localNumber = digitsOnly.substring(2);
-    } else if (digitsOnly.startsWith('55')) {
-      countryCode = '+55';
-      localNumber = digitsOnly.substring(2);
-    } else if (digitsOnly.startsWith('56')) {
-      countryCode = '+56';
-      localNumber = digitsOnly.substring(2);
-    } else if (digitsOnly.startsWith('57')) {
-      countryCode = '+57';
-      localNumber = digitsOnly.substring(2);
-    } else if (digitsOnly.startsWith('58')) {
-      countryCode = '+58';
-      localNumber = digitsOnly.substring(2);
-    } else if (digitsOnly.startsWith('593')) {
+    if (digitsOnly.startsWith('593') && digitsOnly.length > 3) {
       countryCode = '+593';
-      localNumber = digitsOnly.substring(3); // Remove '593'
-    } else if (digitsOnly.startsWith('1')) {
-      countryCode = '+1';
-      localNumber = digitsOnly.substring(1);
-    } else if (digitsOnly.startsWith('34')) {
+      localNumber = digitsOnly.slice(3);
+    } else if (digitsOnly.startsWith('51') && digitsOnly.length > 2) {
+      countryCode = '+51';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('52') && digitsOnly.length > 2) {
+      countryCode = '+52';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('54') && digitsOnly.length > 2) {
+      countryCode = '+54';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('55') && digitsOnly.length > 2) {
+      countryCode = '+55';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('56') && digitsOnly.length > 2) {
+      countryCode = '+56';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('57') && digitsOnly.length > 2) {
+      countryCode = '+57';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('58') && digitsOnly.length > 2) {
+      countryCode = '+58';
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('34') && digitsOnly.length > 2) {
       countryCode = '+34';
-      localNumber = digitsOnly.substring(2);
+      localNumber = digitsOnly.slice(2);
+    } else if (digitsOnly.startsWith('1') && digitsOnly.length > 1) {
+      countryCode = '+1';
+      localNumber = digitsOnly.slice(1);
     }
 
-    // Mask local number only (show last 4 digits)
-    if (localNumber.length >= 9) {
+    // Mask local number (show last 4 digits)
+    if (localNumber.length >= 7) {
       const lastDigits = localNumber.slice(-4);
-      return `${countryCode} XXX XXX ${lastDigits}`;
+      const hiddenCount = localNumber.length - 4;
+      const masks = 'X'.repeat(hiddenCount);
+      return `${countryCode} ${masks.match(/.{1,3}/g)?.join(' ') || masks} ${lastDigits}`;
     }
 
     return phone;
@@ -365,6 +366,9 @@ export default function SettingsPage() {
         return;
       }
 
+      // Remove '+' sign from phone - backend expects format without it
+      const phoneWithoutPlus = validation.formatted.replace('+', '');
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/whatsapp/test-connection`, {
         method: 'POST',
         headers: {
@@ -373,7 +377,7 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           businessId,
-          phone: validation.formatted,
+          phone: phoneWithoutPlus,
         }),
       });
 
