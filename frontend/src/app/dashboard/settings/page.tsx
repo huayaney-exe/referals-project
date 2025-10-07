@@ -55,6 +55,7 @@ export default function SettingsPage() {
 
   // Phone input state
   const [selectedCountry, setSelectedCountry] = useState<string>('+51');
+  const [phoneDigits, setPhoneDigits] = useState<string>('');
 
   // Fetch business settings
   useEffect(() => {
@@ -72,18 +73,45 @@ export default function SettingsPage() {
           const data = await response.json();
           setBusinessSettings(data);
 
-          // Detect country code from saved phone
+          // Detect country code and extract digits from saved phone
           if (data.phone) {
-            if (data.phone.startsWith('+51')) setSelectedCountry('+51');
-            else if (data.phone.startsWith('+52')) setSelectedCountry('+52');
-            else if (data.phone.startsWith('+54')) setSelectedCountry('+54');
-            else if (data.phone.startsWith('+55')) setSelectedCountry('+55');
-            else if (data.phone.startsWith('+56')) setSelectedCountry('+56');
-            else if (data.phone.startsWith('+57')) setSelectedCountry('+57');
-            else if (data.phone.startsWith('+58')) setSelectedCountry('+58');
-            else if (data.phone.startsWith('+593')) setSelectedCountry('+593');
-            else if (data.phone.startsWith('+1')) setSelectedCountry('+1');
-            else if (data.phone.startsWith('+34')) setSelectedCountry('+34');
+            let detectedCountry = '+51';
+            let localNumber = '';
+
+            if (data.phone.startsWith('+593')) {
+              detectedCountry = '+593';
+              localNumber = data.phone.substring(4);
+            } else if (data.phone.startsWith('+51')) {
+              detectedCountry = '+51';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+52')) {
+              detectedCountry = '+52';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+54')) {
+              detectedCountry = '+54';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+55')) {
+              detectedCountry = '+55';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+56')) {
+              detectedCountry = '+56';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+57')) {
+              detectedCountry = '+57';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+58')) {
+              detectedCountry = '+58';
+              localNumber = data.phone.substring(3);
+            } else if (data.phone.startsWith('+1')) {
+              detectedCountry = '+1';
+              localNumber = data.phone.substring(2);
+            } else if (data.phone.startsWith('+34')) {
+              detectedCountry = '+34';
+              localNumber = data.phone.substring(3);
+            }
+
+            setSelectedCountry(detectedCountry);
+            setPhoneDigits(localNumber);
           }
         }
       } catch (error) {
@@ -185,10 +213,8 @@ export default function SettingsPage() {
 
       // Format phone with selected country code before saving
       const dataToSave = { ...businessSettings };
-      if (dataToSave.phone) {
-        const digitsOnly = dataToSave.phone.replace(/\D/g, '');
-        // Always use selected country code
-        dataToSave.phone = `${selectedCountry}${digitsOnly}`;
+      if (phoneDigits) {
+        dataToSave.phone = `${selectedCountry}${phoneDigits}`;
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`, {
@@ -277,8 +303,11 @@ export default function SettingsPage() {
     setTestResult(null);
 
     try {
+      // Build complete phone number
+      const completePhone = `${selectedCountry}${phoneDigits}`;
+
       // Validate phone
-      const validation = validatePhone(businessSettings.phone || '');
+      const validation = validatePhone(completePhone);
       if (!validation.valid) {
         setTestResult({ success: false, message: validation.error || 'Número inválido' });
         return;
@@ -467,11 +496,11 @@ export default function SettingsPage() {
                     type="tel"
                     placeholder="900 000 000"
                     className="flex-1 px-3 py-2 border border-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    value={businessSettings.phone?.replace(/^\+?\d{1,4}\s?/, '') || ''}
+                    value={phoneDigits}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, '');
                       if (digits.length <= 15) {
-                        setBusinessSettings({ ...businessSettings, phone: digits });
+                        setPhoneDigits(digits);
                       }
                     }}
                     maxLength={15}
@@ -585,9 +614,9 @@ export default function SettingsPage() {
                     Envía un mensaje de prueba a tu número para verificar que WhatsApp funciona correctamente.
                   </p>
 
-                  {businessSettings.phone && (
+                  {phoneDigits && (
                     <p className="text-sm text-warm-700 mb-3">
-                      Se enviará un mensaje a: <strong>{maskPhone(businessSettings.phone)}</strong>
+                      Se enviará un mensaje a: <strong>{maskPhone(`${selectedCountry}${phoneDigits}`)}</strong>
                     </p>
                   )}
 
