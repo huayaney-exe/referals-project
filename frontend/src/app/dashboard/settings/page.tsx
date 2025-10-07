@@ -160,10 +160,17 @@ export default function SettingsPage() {
   const handleSaveBusinessSettings = async () => {
     setSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert('Sesión expirada. Por favor inicia sesión nuevamente.');
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/businesses/${businessId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(businessSettings),
       });
@@ -171,7 +178,8 @@ export default function SettingsPage() {
       if (response.ok) {
         alert('Configuración guardada exitosamente');
       } else {
-        throw new Error('Error al guardar configuración');
+        const errorData = await response.json();
+        alert(errorData.error || 'Error al guardar configuración');
       }
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -409,12 +417,34 @@ export default function SettingsPage() {
                 onChange={(e) => setBusinessSettings({ ...businessSettings, email: e.target.value })}
                 required
               />
-              <Input
-                label="Teléfono"
-                placeholder="+51 912 345 678"
-                value={businessSettings.phone || ''}
-                onChange={(e) => setBusinessSettings({ ...businessSettings, phone: e.target.value })}
-              />
+              <div>
+                <label className="block text-sm font-medium text-warm-900 mb-1">
+                  Teléfono <span className="text-error">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="px-3 py-2 border border-warm-300 rounded-lg bg-white text-warm-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    value="+51"
+                    disabled
+                  >
+                    <option value="+51">🇵🇪 +51</option>
+                  </select>
+                  <input
+                    type="tel"
+                    placeholder="900 000 000"
+                    className="flex-1 px-3 py-2 border border-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    value={businessSettings.phone?.replace(/^\+51\s?/, '') || ''}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      if (digits.length <= 9) {
+                        setBusinessSettings({ ...businessSettings, phone: digits });
+                      }
+                    }}
+                    maxLength={11}
+                  />
+                </div>
+                <p className="text-xs text-warm-600 mt-1">Número móvil de 9 dígitos (comienza con 9)</p>
+              </div>
               <Input
                 label="Categoría"
                 placeholder="Ej: Cafetería, Restaurante"
