@@ -4,6 +4,7 @@ import { StampService } from '../../domains/loyalty/Stamp';
 import { CustomerService } from '../../domains/customer/Customer';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { stampLimiter } from '../middleware/rateLimiting.middleware';
+import { campaignEventEmitter } from '../../infrastructure/events/EventEmitter';
 
 const router = Router();
 
@@ -44,6 +45,7 @@ router.post('/', authenticate, stampLimiter, async (req: AuthenticatedRequest, r
     // Add stamps in a loop (or batch operation in future)
     let totalRewards = 0;
     let finalStampCount = customer.stamps_count;
+    const initialStampCount = customer.stamps_count;
 
     for (let i = 0; i < quantity; i++) {
       const result = await StampService.addStamp(
@@ -54,6 +56,40 @@ router.post('/', authenticate, stampLimiter, async (req: AuthenticatedRequest, r
       );
       finalStampCount = result.new_stamps_count;
       if (result.is_reward_earned) totalRewards++;
+    }
+
+    // Emit campaign events for event-triggered campaigns
+    try {
+      // Emit stamps.reached event for the final stamp count
+      campaignEventEmitter.emitStampsReached(
+        req.user!.businessId,
+        customer_id,
+        finalStampCount
+      );
+
+      // Emit reward.unlocked if customer earned rewards
+      if (totalRewards > 0) {
+        // Get business reward structure to include reward description
+        const business = await CustomerService.getBusinessInfo(req.user!.businessId);
+        const rewardDescription = business?.reward_structure?.reward_description || '1 premio gratis';
+
+        campaignEventEmitter.emitRewardUnlocked(
+          req.user!.businessId,
+          customer_id,
+          rewardDescription
+        );
+      }
+
+      // Emit customer.enrolled if this is their first stamp
+      if (initialStampCount === 0 && finalStampCount > 0) {
+        campaignEventEmitter.emitCustomerEnrolled(
+          req.user!.businessId,
+          customer_id
+        );
+      }
+    } catch (eventError) {
+      // Log but don't fail the request if event emission fails
+      console.error('Error emitting campaign events:', eventError);
     }
 
     res.status(201).json({

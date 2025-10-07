@@ -20,11 +20,6 @@ export default function CampaignsPage() {
   const searchParams = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[CampaignsPage] Auth state:', { user: !!user, businessId, authLoading });
-    console.log('[CampaignsPage] Query state:', { campaigns: campaigns?.length, isLoading });
-  }, [user, businessId, authLoading, campaigns, isLoading]);
 
   useEffect(() => {
     if (searchParams?.get('success') === 'true') {

@@ -16,7 +16,6 @@ export function useCampaigns(businessId: string) {
   return useQuery({
     queryKey: ['campaigns', businessId],
     queryFn: async () => {
-      console.log('Fetching campaigns for businessId:', businessId); // Debug log
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
@@ -27,13 +26,13 @@ export function useCampaigns(businessId: string) {
         console.error('Error fetching campaigns:', error);
         throw error;
       }
-      console.log('Fetched campaigns:', data); // Debug log
       return data as Campaign[];
     },
     enabled: !!businessId,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always refetch to ensure fresh data
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

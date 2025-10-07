@@ -131,4 +131,15 @@ export class CustomerService {
     if (error) throw error;
     return count || 0;
   }
+
+  static async getBusinessInfo(business_id: string): Promise<any | null> {
+    const { data, error } = await supabaseAdmin
+      .from('businesses')
+      .select('id, name, reward_structure')
+      .eq('id', business_id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  }
 }

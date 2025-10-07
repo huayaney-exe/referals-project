@@ -1,0 +1,46 @@
+# Render Blueprint for Loyalty Platform Peru
+# This configuration deploys:
+# - Backend API with campaign workers
+# - Redis for Bull queue (event-triggered campaigns)
+
+services:
+  # Backend API Service
+  - type: web
+    name: loyalty-platform-backend
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: loyalty-platform-redis
+          property: connectionString
+      - key: EVOLUTION_API_URL
+        sync: false
+      - key: EVOLUTION_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+# Redis for Bull Queues (Campaign Message Processing)
+databases:
+  - name: loyalty-platform-redis
+    databaseName: campaign_queues
+    plan: starter
+    region: oregon
+    ipAllowList: []
