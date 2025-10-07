@@ -8,7 +8,6 @@ import { Button } from '@/design-system/primitives/Button/Button';
 import { Input } from '@/design-system/primitives/Input/Input';
 import { Building2, Settings as SettingsIcon, MessageCircle, Save, RefreshCw } from 'lucide-react';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
-import Image from 'next/image';
 
 interface BusinessSettings {
   name: string;
@@ -330,12 +329,13 @@ export default function SettingsPage() {
                 {whatsappStatus?.qr_code ? (
                   <div className="flex flex-col items-center gap-4">
                     <div className="p-4 bg-white rounded-lg border-2 border-warm-200">
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={`data:image/png;base64,${whatsappStatus.qr_code}`}
                         alt="WhatsApp QR Code"
                         width={300}
                         height={300}
-                        unoptimized
+                        className="max-w-full h-auto"
                       />
                     </div>
                     <div className="space-y-2 text-sm text-warm-600">
