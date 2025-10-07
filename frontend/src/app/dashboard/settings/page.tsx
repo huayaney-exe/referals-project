@@ -498,15 +498,9 @@ export default function SettingsPage() {
                     className="flex-1 px-3 py-2 border border-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-warm-900"
                     value={phoneDigits || ''}
                     onChange={(e) => {
-                      console.log('🔍 Input onChange fired:', {
-                        rawValue: e.target.value,
-                        currentState: phoneDigits,
-                      });
                       const digits = e.target.value.replace(/\D/g, '');
-                      console.log('✅ Extracted digits:', digits);
                       if (digits.length <= 15) {
                         setPhoneDigits(digits);
-                        console.log('💾 Setting phoneDigits to:', digits);
                       }
                     }}
                     maxLength={15}
