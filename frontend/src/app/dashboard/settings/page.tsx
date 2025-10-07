@@ -116,7 +116,11 @@ export default function SettingsPage() {
     const pollInterval = setInterval(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return;
+        if (!session?.access_token) {
+          // Session expired - stop polling
+          clearInterval(pollInterval);
+          return;
+        }
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/whatsapp/status/${businessId}`, {
           headers: {
@@ -132,6 +136,9 @@ export default function SettingsPage() {
           if (data.connected) {
             clearInterval(pollInterval);
           }
+        } else if (response.status === 401) {
+          // Unauthorized - session expired, stop polling
+          clearInterval(pollInterval);
         }
       } catch (error) {
         console.error('Error polling WhatsApp status:', error);
