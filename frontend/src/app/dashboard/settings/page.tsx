@@ -345,9 +345,15 @@ export default function SettingsPage() {
     try {
       // Build complete phone number
       const completePhone = `${selectedCountry}${phoneDigits}`;
+      console.log('🔍 WhatsApp Test - Phone Data:', {
+        selectedCountry,
+        phoneDigits,
+        completePhone,
+      });
 
       // Validate phone
       const validation = validatePhone(completePhone);
+      console.log('✅ Validation result:', validation);
       if (!validation.valid) {
         setTestResult({ success: false, message: validation.error || 'Número inválido' });
         return;
