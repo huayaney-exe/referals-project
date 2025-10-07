@@ -98,19 +98,37 @@ router.get('/qr/:businessId', authenticate, async (req, res, next) => {
             qr_code: qrCode,
           });
         } catch (createError: any) {
+          console.error('Evolution instance creation failed:', createError.message);
+
+          // Determine appropriate error response based on error type
+          if (createError.message.includes('INVALID_API_KEY') ||
+              createError.message.includes('Unauthorized')) {
+            return res.status(503).json({
+              error: {
+                code: 'WHATSAPP_SERVICE_UNAVAILABLE',
+                message: 'El servicio de WhatsApp no está disponible. Contacta a soporte.',
+                details: process.env.NODE_ENV === 'development' ? createError.message : undefined,
+              },
+            });
+          }
+
           return res.status(500).json({
             error: {
               code: 'INSTANCE_CREATE_FAILED',
               message: 'Error al crear instancia de WhatsApp',
+              details: process.env.NODE_ENV === 'development' ? createError.message : undefined,
             },
           });
         }
       } else {
-        // Other error
+        // Other error - log for debugging
+        console.error('QR code generation failed:', error.message);
+
         return res.status(500).json({
           error: {
             code: 'QR_GENERATION_FAILED',
             message: 'Error al generar código QR',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined,
           },
         });
       }
