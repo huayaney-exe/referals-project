@@ -102,6 +102,45 @@ export default function SettingsPage() {
     fetchWhatsAppStatus();
   }, [businessId, user]);
 
+  // Poll WhatsApp status when QR is visible or connecting
+  // TODO: Replace with WebSocket/SSE for production (more efficient than polling)
+  // For Beta MVP, 3s polling is acceptable for quick time-to-market
+  useEffect(() => {
+    if (!businessId || !user) return;
+
+    // Poll if: QR code is visible OR status is connecting OR not connected
+    const shouldPoll = whatsappStatus?.qr_code || !whatsappStatus?.connected;
+
+    if (!shouldPoll) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/v1/whatsapp/status/${businessId}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setWhatsappStatus(data);
+
+          // Stop polling if connected
+          if (data.connected) {
+            clearInterval(pollInterval);
+          }
+        }
+      } catch (error) {
+        console.error('Error polling WhatsApp status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [businessId, user, whatsappStatus?.qr_code, whatsappStatus?.connected]);
+
   const handleSaveBusinessSettings = async () => {
     setSaving(true);
     try {
@@ -127,6 +166,12 @@ export default function SettingsPage() {
   };
 
   const handleRefreshQR = async () => {
+    // Prevent generating QR if already connected
+    if (whatsappStatus?.connected) {
+      setQrError('WhatsApp ya está conectado. Desconecta primero para volver a conectar.');
+      return;
+    }
+
     setRefreshingQR(true);
     setQrError(null); // Clear previous errors
 
@@ -328,6 +373,16 @@ export default function SettingsPage() {
 
                 {whatsappStatus?.qr_code ? (
                   <div className="flex flex-col items-center gap-4">
+                    {/* Scanning indicator */}
+                    <div className="p-3 bg-info/10 border-2 border-info/20 rounded-lg w-full">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-info rounded-full animate-pulse"></div>
+                        <p className="text-info-dark text-sm font-medium">
+                          Esperando escaneo del código QR...
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="p-4 bg-white rounded-lg border-2 border-warm-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -338,13 +393,29 @@ export default function SettingsPage() {
                         className="max-w-full h-auto"
                       />
                     </div>
-                    <div className="space-y-2 text-sm text-warm-600">
-                      <p className="font-medium text-warm-900">Pasos para conectar:</p>
-                      <ol className="list-decimal list-inside space-y-1">
-                        <li>Abre WhatsApp en tu teléfono</li>
-                        <li>Toca Menú o Configuración y selecciona Dispositivos vinculados</li>
-                        <li>Toca Vincular un dispositivo</li>
-                        <li>Apunta tu teléfono a esta pantalla para capturar el código QR</li>
+                    <div className="space-y-3 text-sm">
+                      <p className="font-semibold text-warm-900 text-base">Cómo conectar (paso a paso):</p>
+                      <ol className="space-y-2">
+                        <li className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold">1</span>
+                          <span className="text-warm-700">Abre <strong>WhatsApp</strong> en tu teléfono</span>
+                        </li>
+                        <li className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold">2</span>
+                          <span className="text-warm-700">Ve a <strong>Configuración</strong> → <strong>Dispositivos vinculados</strong></span>
+                        </li>
+                        <li className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold">3</span>
+                          <span className="text-warm-700">Toca <strong>&quot;Vincular un dispositivo&quot;</strong></span>
+                        </li>
+                        <li className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold">4</span>
+                          <span className="text-warm-700">Apunta tu cámara al código QR de arriba</span>
+                        </li>
+                        <li className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-success text-white flex items-center justify-center text-xs font-bold">✓</span>
+                          <span className="text-warm-700"><strong>¡No cierres WhatsApp!</strong> En instantes verás aquí &quot;Conexión Completada&quot;</span>
+                        </li>
                       </ol>
                     </div>
                     <Button
