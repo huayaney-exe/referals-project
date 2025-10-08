@@ -93,6 +93,11 @@ export class EvolutionWhatsAppService {
         message: error.message,
       });
 
+      // Log the actual error message array if present
+      if (error.response?.data?.response?.message) {
+        console.error(`📋 Evolution API detailed messages:`, JSON.stringify(error.response.data.response.message, null, 2));
+      }
+
       // Handle specific errors
       if (error.response?.status === 404) {
         throw new Error('INSTANCE_NOT_FOUND');
