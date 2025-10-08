@@ -73,13 +73,26 @@ export class EvolutionWhatsAppService {
         },
       };
 
+      console.log(`📤 Sending to Evolution API: /message/sendText/${params.instanceName}`);
+      console.log(`📱 Payload:`, JSON.stringify(payload, null, 2));
+
       const response = await this.client.post(
         `/message/sendText/${params.instanceName}`,
         payload
       );
 
+      console.log(`✅ Evolution API response:`, response.status, response.data);
+
       return response.data;
     } catch (error: any) {
+      // Log detailed error information
+      console.error(`❌ Evolution API error:`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
+
       // Handle specific errors
       if (error.response?.status === 404) {
         throw new Error('INSTANCE_NOT_FOUND');
