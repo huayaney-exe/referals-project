@@ -111,11 +111,19 @@ export class OutboxProcessor {
       } else if (events && events.length > 0) {
         console.log(`📬 Found ${events.length} outbox events to process`);
 
-        // Add events to queue
+        // Add events to queue (Bull will deduplicate by jobId)
         for (const event of events) {
-          await this.queue.add('process-event', event, {
-            jobId: event.id,
-          });
+          try {
+            // Check if job already exists in queue
+            const existingJob = await this.queue.getJob(event.id);
+            if (!existingJob) {
+              await this.queue.add('process-event', event, {
+                jobId: event.id,
+              });
+            }
+          } catch (addError) {
+            console.error(`Error adding event ${event.id} to queue:`, addError);
+          }
         }
       }
     } catch (error) {
@@ -140,14 +148,18 @@ export class OutboxProcessor {
 
     // Handle successful processing
     this.queue.on('completed', async (job, _result) => {
-      console.log(`✅ Event ${job.data.id} processed successfully`);
+      console.log(`✅ Event ${job.data.id} (${job.data.event_type}) processed successfully`);
       await this.markEventAsProcessed(job.data.id);
     });
 
     // Handle failed processing
     this.queue.on('failed', async (job, err) => {
-      console.error(`❌ Event ${job.data.id} failed:`, err.message);
-      await this.incrementRetryCount(job.data.id, err.message);
+      console.error(`❌ Event ${job.data.id} (${job.data.event_type}) failed after ${job.attemptsMade} attempts:`, err.message);
+
+      // Only increment retry count if max attempts reached
+      if (job.attemptsMade >= this.MAX_RETRIES) {
+        await this.incrementRetryCount(job.data.id, err.message);
+      }
     });
 
     // Handle stalled jobs

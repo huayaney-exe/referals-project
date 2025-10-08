@@ -229,8 +229,9 @@ export class EvolutionWhatsAppService {
    * @returns boolean
    */
   isValidPeruPhone(phone: string): boolean {
-    const peruPhoneRegex = /^\+?51\s?9\d{2}\s?\d{3}\s?\d{3}$/;
-    return peruPhoneRegex.test(phone);
+    // Accepts: +51900957907, 51900957907, +51 900 957 907, 51 900 957 907
+    const peruPhoneRegex = /^\+?51\s?9\d{8}$/;
+    return peruPhoneRegex.test(phone.replace(/\s/g, ''));
   }
 
   /**
