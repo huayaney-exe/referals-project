@@ -211,27 +211,37 @@ export class EvolutionWhatsAppService {
    * @returns Formatted phone number (no spaces, no +)
    */
   formatPhoneNumber(phone: string): string {
+    console.log(`🔧 formatPhoneNumber - Input: "${phone}"`);
+
     // Remove all non-numeric characters except +
     let cleaned = phone.replace(/[^\d+]/g, '');
+    console.log(`🔧 After removing non-numeric: "${cleaned}"`);
 
     // Remove + sign
     cleaned = cleaned.replace(/\+/g, '');
+    console.log(`🔧 After removing +: "${cleaned}"`);
 
     // Validate it starts with country code
     if (!cleaned.startsWith('51')) {
+      console.log(`❌ Does not start with 51`);
       // If it starts with 9 (Peru mobile), add country code
       if (cleaned.startsWith('9') && cleaned.length === 9) {
+        console.log(`✅ Starts with 9 and length 9, adding 51`);
         return `51${cleaned}`;
       }
 
+      console.error(`❌ INVALID_PHONE_FORMAT - cleaned: "${cleaned}"`);
       throw new Error('INVALID_PHONE_FORMAT');
     }
 
     // Validate Peru mobile format: 51 + 9XX XXX XXX
+    console.log(`🔧 Checking length (${cleaned.length}) === 11 && starts with 519: ${cleaned.startsWith('519')}`);
     if (cleaned.length !== 11 || !cleaned.startsWith('519')) {
+      console.error(`❌ INVALID_PERU_PHONE_FORMAT - length: ${cleaned.length}, starts with 519: ${cleaned.startsWith('519')}`);
       throw new Error('INVALID_PERU_PHONE_FORMAT');
     }
 
+    console.log(`✅ formatPhoneNumber - Output: "${cleaned}"`);
     return cleaned;
   }
 
