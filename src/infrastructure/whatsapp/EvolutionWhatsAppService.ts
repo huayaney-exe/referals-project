@@ -63,13 +63,11 @@ export class EvolutionWhatsAppService {
 
       const payload = {
         number: formattedNumber,
+        text: params.text,
         options: {
           delay: params.delay || 1200,
           presence: 'composing',
           linkPreview: false,
-        },
-        textMessage: {
-          text: params.text,
         },
       };
 
@@ -108,7 +106,12 @@ export class EvolutionWhatsAppService {
       }
 
       if (error.response?.status === 400) {
-        throw new Error('INVALID_PHONE_NUMBER');
+        // Extract actual error message from Evolution API
+        const errorMessages = error.response?.data?.response?.message;
+        if (errorMessages && Array.isArray(errorMessages) && errorMessages.length > 0) {
+          throw new Error(`EVOLUTION_API_VALIDATION: ${errorMessages.flat().join(', ')}`);
+        }
+        throw new Error('INVALID_REQUEST');
       }
 
       if (error.code === 'ECONNABORTED') {
