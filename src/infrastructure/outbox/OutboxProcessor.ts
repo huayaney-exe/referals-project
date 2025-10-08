@@ -97,32 +97,42 @@ export class OutboxProcessor {
     }
 
     try {
-      // Fetch unprocessed events
-      const { data: events, error } = await supabaseAdmin
-        .from('outbox_events')
-        .select('*')
-        .is('processed_at', null)
-        .lt('retry_count', this.MAX_RETRIES)
-        .order('created_at', { ascending: true })
-        .limit(this.BATCH_SIZE);
+      // Check if queue has pending work - if so, skip polling to prevent re-queuing
+      const [waitingCount, activeCount, delayedCount, failedCount] = await Promise.all([
+        this.queue.getWaitingCount(),
+        this.queue.getActiveCount(),
+        this.queue.getDelayedCount(),
+        this.queue.getFailedCount(),
+      ]);
 
-      if (error) {
-        console.error('Error fetching outbox events:', error);
-      } else if (events && events.length > 0) {
-        console.log(`📬 Found ${events.length} outbox events to process`);
+      const pendingWork = waitingCount + activeCount + delayedCount + failedCount;
 
-        // Add events to queue (Bull will deduplicate by jobId)
-        for (const event of events) {
-          try {
-            // Check if job already exists in queue
-            const existingJob = await this.queue.getJob(event.id);
-            if (!existingJob) {
+      if (pendingWork > 0) {
+        console.log(`⏳ Queue has ${pendingWork} pending jobs (waiting: ${waitingCount}, active: ${activeCount}, delayed: ${delayedCount}, failed: ${failedCount}), skipping poll`);
+      } else {
+        // Fetch unprocessed events
+        const { data: events, error } = await supabaseAdmin
+          .from('outbox_events')
+          .select('*')
+          .is('processed_at', null)
+          .lt('retry_count', this.MAX_RETRIES)
+          .order('created_at', { ascending: true })
+          .limit(this.BATCH_SIZE);
+
+        if (error) {
+          console.error('Error fetching outbox events:', error);
+        } else if (events && events.length > 0) {
+          console.log(`📬 Found ${events.length} outbox events to process`);
+
+          // Add events to queue
+          for (const event of events) {
+            try {
               await this.queue.add('process-event', event, {
                 jobId: event.id,
               });
+            } catch (addError) {
+              console.error(`Error adding event ${event.id} to queue:`, addError);
             }
-          } catch (addError) {
-            console.error(`Error adding event ${event.id} to queue:`, addError);
           }
         }
       }
