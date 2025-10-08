@@ -218,7 +218,11 @@ router.post('/test-connection', authenticate, async (req, res, next) => {
     }
 
     // Validate phone number format (Peru mobile)
-    if (!evolutionWhatsAppService.isValidPeruPhone(phone)) {
+    console.log(`🔍 Validating phone: "${phone}" (type: ${typeof phone}, length: ${phone?.length})`);
+    const isValid = evolutionWhatsAppService.isValidPeruPhone(phone);
+    console.log(`📱 Phone validation result: ${isValid}`);
+
+    if (!isValid) {
       return res.status(400).json({
         error: 'Número de teléfono inválido. Debe ser un número móvil de Perú (+51 9XX XXX XXX).',
       });

@@ -230,8 +230,13 @@ export class EvolutionWhatsAppService {
    */
   isValidPeruPhone(phone: string): boolean {
     // Accepts: +51900957907, 51900957907, +51 900 957 907, 51 900 957 907
+    const cleaned = phone.replace(/\s/g, '');
     const peruPhoneRegex = /^\+?51\s?9\d{8}$/;
-    return peruPhoneRegex.test(phone.replace(/\s/g, ''));
+    const isValid = peruPhoneRegex.test(cleaned);
+
+    console.log(`📞 isValidPeruPhone - Input: "${phone}", Cleaned: "${cleaned}", Valid: ${isValid}`);
+
+    return isValid;
   }
 
   /**
