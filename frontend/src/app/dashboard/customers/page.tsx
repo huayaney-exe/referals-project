@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useCustomers } from '@/lib/hooks/useCustomers';
+import { useSendCard } from '@/lib/hooks/useCustomerActions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/design-system/primitives/Card/Card';
 import { Input } from '@/design-system/primitives/Input/Input';
 import { Badge } from '@/design-system/primitives/Badge/Badge';
 import { Progress } from '@/design-system/primitives/Progress/Progress';
-import { Search, User, Calendar, TrendingUp } from 'lucide-react';
+import { Button } from '@/design-system/primitives/Button/Button';
+import { Search, User, Calendar, TrendingUp, Send, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
@@ -15,12 +18,11 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function CustomersPage() {
   const { user } = useAuth();
+  const { businessId } = useBusinessContext();
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
 
-  // For demo, using user.id as business_id (in production, fetch from business table)
-  const businessId = user?.id || '';
-  const { data: customers, isLoading, error } = useCustomers(businessId, search);
+  const { data: customers, isLoading, error } = useCustomers(businessId || '', search);
 
   // Supabase Realtime subscription
   useEffect(() => {
@@ -186,6 +188,23 @@ function CustomerRow({ customer }: { customer: any }) {
   const stampsCount = customer.stamps_count || 0;
   const requiredStamps = 10; // Should come from business config
   const isComplete = stampsCount >= requiredStamps;
+  const sendCard = useSendCard();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState('');
+
+  const handleSendCard = async () => {
+    setShowError('');
+    setShowSuccess(false);
+
+    try {
+      await sendCard.mutateAsync(customer.id);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error: any) {
+      setShowError(error.message || 'Error al enviar tarjeta');
+      setTimeout(() => setShowError(''), 5000);
+    }
+  };
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-lg border border-warm-200 hover:border-brand-light hover:bg-brand-whisper/50 transition-all">
@@ -201,21 +220,53 @@ function CustomerRow({ customer }: { customer: any }) {
               Premio disponible
             </Badge>
           )}
+          {showSuccess && (
+            <Badge variant="success" className="text-xs">
+              ✓ Tarjeta enviada
+            </Badge>
+          )}
+          {showError && (
+            <Badge variant="error" className="text-xs">
+              {showError}
+            </Badge>
+          )}
         </div>
         <p className="text-sm text-warm-600 mb-2">{customer.phone}</p>
         <Progress value={stampsCount} max={requiredStamps} size="sm" showLabel />
       </div>
 
-      <div className="text-right">
-        <p className="text-sm text-warm-500">
-          {customer.enrolled_at &&
-            format(new Date(customer.enrolled_at), "d 'de' MMMM, yyyy", { locale: es })}
-        </p>
-        <p className="text-xs text-warm-400 mt-1">
-          {customer.last_activity_at
-            ? `Última visita: ${format(new Date(customer.last_activity_at), 'd/MM/yyyy')}`
-            : 'Sin actividad reciente'}
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="text-right">
+          <p className="text-sm text-warm-500">
+            {customer.enrolled_at &&
+              format(new Date(customer.enrolled_at), "d 'de' MMMM, yyyy", { locale: es })}
+          </p>
+          <p className="text-xs text-warm-400 mt-1">
+            {customer.last_stamp_at
+              ? `Última visita: ${format(new Date(customer.last_stamp_at), 'd/MM/yyyy')}`
+              : 'Sin actividad reciente'}
+          </p>
+        </div>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={handleSendCard}
+          disabled={sendCard.isPending}
+          className="shrink-0"
+        >
+          {sendCard.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4 mr-2" />
+              Enviar Tarjeta
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

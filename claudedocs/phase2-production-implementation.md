@@ -1,4 +1,4 @@
-# Phase 2: Production-Ready Implementation Plan
+https://seyaloyalty.vercel.app/# Phase 2: Production-Ready Implementation Plan
 
 **Target**: Delight & Retention Features with Production Quality
 **Timeline**: 3 weeks (sustainable pace)

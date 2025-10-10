@@ -50,6 +50,23 @@ export class CustomerService {
 
     if (error) throw error;
 
+    // Generate and update pass_url for customer card
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const passUrl = `${frontendUrl}/card/${data.id}`;
+
+    const { error: updateError } = await supabaseAdmin
+      .from('customers')
+      .update({ pass_url: passUrl })
+      .eq('id', data.id);
+
+    if (updateError) {
+      console.error('Failed to update pass_url:', updateError);
+      // Don't throw - customer is created, URL can be regenerated later
+    }
+
+    // Update the returned data with the pass_url
+    data.pass_url = passUrl;
+
     // Emit customer enrolled event
     campaignEventEmitter.emitCustomerEnrolled(
       validated.business_id,

@@ -30,6 +30,7 @@ In Vercel Dashboard → Project Settings → Environment Variables, add:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://qonybpevhbczbutvkbfb.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+
 ```
 
 **Preview/Development Environment:**
